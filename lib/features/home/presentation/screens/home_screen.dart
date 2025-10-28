@@ -1,27 +1,16 @@
+// lib/features/home/presentation/screens/home_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:todo_social/core/auth/auth_provider.dart';
 
-class HomeScreen extends ConsumerWidget {
+// Placeholder Home Screen
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Ana Sayfa (Todo Social)"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              // AuthProvider üzerinden çıkış yap
-              ref.read(authProvider.notifier).logout();
-            },
-          )
-        ],
-      ),
+      appBar: AppBar(title: const Text('Home Feed')),
       body: const Center(
-        child: Text("Giriş Başarılı! Burası Ana Sayfa."),
+        child: Text('Home Screen Placeholder'),
       ),
     );
   }
