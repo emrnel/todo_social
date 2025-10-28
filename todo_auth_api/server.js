@@ -1,21 +1,64 @@
-const express = require('express');
-const authRoutes = require('./routes/auth.routes'); // We'll create this file
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors"; // Import cors for cross-origin requests
+import sequelize from "./db.js"; // Import the database connection
+
+// Import our new router file (the "traffic cop")
+import authRoutes from "./routes/auth_routes.js";
+
+// Import our model(s) to sync with the database
+// This is important so Sequelize knows about the 'User' table
+import User from "./models/User.js"; 
+// import Todo from "./models/Todo.js"; // You will add more models here later
+
+// Load environment variables from .env file (you already have this)
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware to parse JSON bodies
+// --- 1. Global Middleware (App-level settings) ---
+
+// Enable CORS (Cross-Origin Resource Sharing)
+// This allows your Flutter app (from a different 'origin') to make requests
+// to this API (localhost:3000). Required for development.
+app.use(cors());
+
+// Enable the express.json() middleware (you already had this)
+// This parses incoming JSON requests (like from Flutter) 
+// and puts the data in req.body. CRITICAL for POST requests.
 app.use(express.json());
 
-// Mount the authentication routes
-app.use('/api/auth', authRoutes);
+// --- 2. Mount Routes ---
 
-// Basic error handling middleware (optional but good practice)
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
-});
+// Tell Express to use the 'authRoutes' for any URL starting with '/api/auth'
+// This keeps your server.js clean and organized.
+// e.g., a request to '/api/auth/register' will be handled by authRoutes.
+app.use("/api/auth", authRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// --- 3. Start Server with Database Connection ---
+const startServer = async () => {
+  try {
+    // First, try to connect to the database
+    await sequelize.authenticate();
+    console.log("✅ Database connection has been established successfully.");
+
+    // Sync all defined models with the database.
+    // This will create the 'users' table if it doesn't exist.
+    // { force: false } (default) won't drop tables if they exist (safe).
+    // { force: true } WILL drop and recreate tables (WARNING: data loss!)
+    await sequelize.sync({ force: false }); 
+    console.log("✅ Database models synchronized.");
+
+    // Start the Express server only *after* the database is ready
+    app.listen(PORT, () => {
+      console.log(`🚀 Server is running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    // If database connection fails, stop the server from starting
+    console.error("❌ Unable to start server:", error);
+  }
+};
+
+// Run the function to start the server
+startServer();
