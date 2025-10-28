@@ -1,70 +1,21 @@
-import express from "express";
-import dotenv from "dotenv";
-import bcrypt from "bcryptjs";
-import db from "./db.js";
-import { body, validationResult } from "express-validator";
+const express = require('express');
+const authRoutes = require('./routes/auth.routes'); // We'll create this file
 
-dotenv.config();
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware to parse JSON bodies
 app.use(express.json());
 
-/**
- * POST /api/auth/register
- * Kullanıcı kayıt endpoint'i
- */
-app.post(
-  "/api/auth/register",
-  [
-    body("email").isEmail().withMessage("Geçerli bir e-posta giriniz."),
-    body("password")
-      .isLength({ min: 6 })
-      .withMessage("Şifre en az 6 karakter olmalı."),
-  ],
-  async (req, res) => {
-    try {
-      // 1️⃣ Validasyon kontrolü
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          success: false,
-          errors: errors.array().map((err) => err.msg),
-        });
-      }
+// Mount the authentication routes
+app.use('/api/auth', authRoutes);
 
-      const { email, password } = req.body;
+// Basic error handling middleware (optional but good practice)
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
 
-      // 2️⃣ E-posta zaten kayıtlı mı kontrol et
-      const [existingUser] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
-      if (existingUser.length > 0) {
-        return res
-          .status(409)
-          .json({ success: false, message: "Bu e-posta adresi zaten kayıtlı." });
-      }
-
-      // 3️⃣ Şifreyi hash'le
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // 4️⃣ Yeni kullanıcıyı kaydet
-      await db.query("INSERT INTO users (email, password) VALUES (?, ?)", [
-        email,
-        hashedPassword,
-      ]);
-
-      // 5️⃣ Yanıt döndür
-      return res.status(201).json({
-        success: true,
-        message: "Kullanıcı başarıyla oluşturuldu.",
-      });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({
-        success: false,
-        message: "Sunucu hatası.",
-      });
-    }
-  }
-);
-
-app.listen(process.env.PORT, () => {
-  console.log(`🚀 Server ${process.env.PORT} portunda çalışıyor`);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
