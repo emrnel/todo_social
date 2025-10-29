@@ -4,7 +4,7 @@ const mysql = require('mysql2');
 const pool = mysql.createPool({
   host: 'localhost',           // Usually 'localhost'
   user: 'root',     // Your MySQL username
-  password: '1234', // Your MySQL password
+  password: '1234', // Your MySQL passwordd
   database: 'todo_db', // Your MySQL database name
   waitForConnections: true,
   connectionLimit: 10,         // Adjust as needed
