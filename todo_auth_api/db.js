@@ -1,8 +1,16 @@
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 
-// Load environment variables from .env file
-dotenv.config();
+// Create a connection pool
+const pool = mysql.createPool({
+  host: 'localhost',           // Usually 'localhost'
+  user: 'root',     // Your MySQL username
+  password: '1234', // Your MySQL passwordd
+  database: 'todo_db', // Your MySQL database name
+  waitForConnections: true,
+  connectionLimit: 10,         // Adjust as needed
+  queueLimit: 0
+});
 
 // Initialize Sequelize
 const sequelize = new Sequelize(
