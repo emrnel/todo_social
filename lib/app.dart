@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:todo_social/features/splash/presentation/screens/splash_screen.dart'; // Import splash screen
 import 'package:todo_social/features/auth/presentation/screens/login_screen.dart';   // Import login screen
 import 'package:todo_social/features/home/presentation/screens/home_screen.dart';   // Import home screen
+import 'package:todo_social/features/auth/presentation/screens/register_screen.dart';   // Import register screen
+
 
 // This is the root widget 'App' that main.dart calls.
 class App extends StatelessWidget {
@@ -29,7 +31,7 @@ class App extends StatelessWidget {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
-        // Add '/register': (context) => const RegisterScreen() later
+         '/register': (context) => const RegisterScreen()
       },
       
       // The first route to show when the app starts
