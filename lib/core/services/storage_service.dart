@@ -1,29 +1,19 @@
-// lib/core/services/storage_service.dart
-// BU DOSYA MUHAMMED'İN (CORE-2). Sadece bağımlılığımızı bilmek için.
-// flutter_secure_storage kullanacak.
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-abstract class IStorageService {
-  Future<String?> getToken();
-  Future<void> saveToken(String token);
-  Future<void> deleteToken();
-}
+class SecureStorage {
+  static const _storage = FlutterSecureStorage();
 
-// Gerçek implementasyonu Muhammed yapacak, (Null dönüyorum)
-class StorageService implements IStorageService {
-  // ... Muhammed'in kodu
-  @override
-  Future<String?> getToken() async {
-    // TODO: Implement using flutter_secure_storage
-    return null;
+  static const _tokenKey = 'auth_token';
+
+  static Future<void> saveToken(String token) async {
+    await _storage.write(key: _tokenKey, value: token);
   }
 
-  @override
-  Future<void> saveToken(String token) async {
-    // TODO: Implement
+  static Future<String?> getToken() async {
+    return await _storage.read(key: _tokenKey);
   }
 
-  @override
-  Future<void> deleteToken() async {
-    // TODO: Implement
+  static Future<void> deleteToken() async {
+    await _storage.delete(key: _tokenKey);
   }
 }
