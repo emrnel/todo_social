@@ -8,8 +8,11 @@ import authRoutes from "./routes/auth_routes.js";
 
 // Import our model(s) to sync with the database
 // This is important so Sequelize knows about the 'User' table
-import User from "./models/User.js"; 
-// import Todo from "./models/Todo.js"; // You will add more models here later
+import User from "./src/models/User.model.js";
+import Todo from "./src/models/Todo.model.js";
+import Routine from "./src/models/Routine.model.js";
+import Follower from "./src/models/Follower.model.js";
+import setupAssociations from './src/models/associations.js';
 
 // Load environment variables from .env file (you already have this)
 dotenv.config();
@@ -43,11 +46,18 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log("✅ Database connection has been established successfully.");
 
+    // Setup all model associations
+    setupAssociations();
+
     // Sync all defined models with the database.
     // This will create the 'users' table if it doesn't exist.
     // { force: false } (default) won't drop tables if they exist (safe).
     // { force: true } WILL drop and recreate tables (WARNING: data loss!)
-    await sequelize.sync({ force: false }); 
+    // { alter: true } will try to alter existing tables to match the model.
+    //
+    // FIX: Use 'alter: true' to add the missing 'username' column to the 'users' table
+    // without deleting all data. For a clean slate, you could use 'force: true'.
+    await sequelize.sync({ alter: true });
     console.log("✅ Database models synchronized.");
 
     // Start the Express server only *after* the database is ready

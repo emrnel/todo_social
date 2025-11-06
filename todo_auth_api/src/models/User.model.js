@@ -1,7 +1,6 @@
 import { DataTypes } from 'sequelize';
 // Import the sequelize connection from db.js
-// '../' means 'go up one directory' (from models/ to the root)
-import sequelize from '../db.js'; 
+import sequelize from '../../db.js';
 
 // Define the User model
 const User = sequelize.define('User', {
