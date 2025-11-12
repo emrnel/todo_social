@@ -5,6 +5,8 @@ import sequelize from "./db.js"; // Import the database connection
 
 // Import our new router file (the "traffic cop")
 import authRoutes from "./routes/auth_routes.js";
+import userRoutes from "./routes/user_routes.js";
+import todoRoutes from "./routes/todo_routes.js";
 
 // Import our model(s) to sync with the database
 // This is important so Sequelize knows about the 'User' table
@@ -38,6 +40,14 @@ app.use(express.json());
 // This keeps your server.js clean and organized.
 // e.g., a request to '/api/auth/register' will be handled by authRoutes.
 app.use("/api/auth", authRoutes);
+
+// Mount the user routes for any URL starting with '/api/users'
+// e.g., a request to '/api/users/me' will be handled by userRoutes.
+app.use("/api/users", userRoutes);
+
+// Mount the todo routes for any URL starting with '/api/todos'
+// e.g., a request to '/api/todos/mytodos' will be handled by todoRoutes.
+app.use("/api/todos", todoRoutes);
 
 // --- 3. Start Server with Database Connection ---
 const startServer = async () => {
