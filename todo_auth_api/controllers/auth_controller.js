@@ -21,20 +21,26 @@ export const register = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        errors: errors.array().map((err) => err.msg), 
+        message: "Validasyon hatası",
+        error: {
+          code: "VALIDATION_ERROR",
+          details: errors.array().map((err) => ({ field: err.path, message: err.msg })),
+        }
       });
     }
 
-    const { email, password } = req.body; 
+    const { username, email, password } = req.body; 
 
     // 2. Check if email is already in use (The Sequelize Way)
     const existingUser = await User.findOne({ where: { email: email } });
     
     if (existingUser) {
       // 409 Conflict
-      return res
-        .status(409) 
-        .json({ success: false, message: "This email address is already registered." });
+      return res.status(409).json({
+        success: false,
+        message: "Bu email adresi zaten kayıtlı",
+        error: { code: "EMAIL_ALREADY_EXISTS" }
+      });
     }
 
     // 3. Hash the password (CRITICAL SECURITY STEP)
@@ -42,22 +48,32 @@ export const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // 4. Create the new user (The Sequelize Way)
-    await User.create({
+    const newUser = await User.create({
+      username: username,
       email: email,
-      password: hashedPassword,
+      password_hash: hashedPassword,
     });
 
     // 5. Send a success response
     return res.status(201).json({ // 201 Created
       success: true,
-      message: "User created successfully.",
+      message: "Kullanıcı başarıyla oluşturuldu",
+      data: {
+        user: {
+          id: newUser.id,
+          username: newUser.username,
+          email: newUser.email,
+          createdAt: newUser.createdAt,
+        }
+      }
     });
 
   } catch (error) {
     console.error("Register Error:", error);
     return res.status(500).json({
       success: false,
-      message: "Server error: " + error.message,
+      message: "Sunucu hatası: " + error.message,
+      error: { code: "INTERNAL_SERVER_ERROR" }
     });
   }
 };
@@ -75,7 +91,11 @@ export const login = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        errors: errors.array().map((err) => err.msg),
+        message: "Validasyon hatası",
+        error: {
+          code: "VALIDATION_ERROR",
+          details: errors.array().map((err) => ({ field: err.path, message: err.msg })),
+        }
       });
     }
 
@@ -85,28 +105,30 @@ export const login = async (req, res) => {
     const user = await User.findOne({ where: { email: email } });
     if (!user) {
       // 401 Unauthorized.
-      return res
-        .status(401) 
-        .json({ success: false, message: "Invalid email or password." });
+      return res.status(401).json({
+        success: false,
+        message: "Email veya şifre hatalı",
+        error: { code: "INVALID_CREDENTIALS" }
+      });
     }
 
     // 3. Compare the provided password with the stored hash
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       // 401 Unauthorized. Password did not match.
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid email or password." });
+      return res.status(401).json({
+        success: false,
+        message: "Email veya şifre hatalı",
+        error: { code: "INVALID_CREDENTIALS" }
+      });
     }
 
     // --- Credentials are VALID! ---
 
     // 4. Create JWT (JSON Web Token) Payload
     const payload = {
-      user: {
-        id: user.id, // The user's ID
-        email: user.email,
-      },
+      userId: user.id,
+      email: user.email,
     };
 
     // 5. Sign the JWT Token
@@ -119,11 +141,14 @@ export const login = async (req, res) => {
     // 6. Send the token back to the client (Flutter app)
     return res.status(200).json({
       success: true,
-      message: "Login successful.",
-      token: token, // This is the token the Flutter app will save
-      user: {
-        id: user.id,
-        email: user.email,
+      message: "Giriş başarılı",
+      data: {
+        token: token,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+        }
       }
     });
 
@@ -131,7 +156,8 @@ export const login = async (req, res) => {
     console.error("Login Error:", error);
     return res.status(500).json({
       success: false,
-      message: "Server error: " + error.message,
+      message: "Sunucu hatası: " + error.message,
+      error: { code: "INTERNAL_SERVER_ERROR" }
     });
   }
 };
