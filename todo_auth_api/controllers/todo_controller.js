@@ -79,3 +79,106 @@ export const createTodo = async (req, res) => {
     });
   }
 };
+
+/**
+ * @name   updateTodo
+ * @desc   Update an existing todo for the logged-in user.
+ * @route  PATCH /api/todos/:id
+ * @access Private (requires JWT)
+ */
+export const updateTodo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { title, description, isCompleted, isPublic } = req.body;
+
+    // Find the todo by its ID.
+    const todo = await Todo.findByPk(id);
+
+    // If the todo doesn't exist, return 404.
+    if (!todo) {
+      return res.status(404).json({
+        success: false,
+        message: 'Görev bulunamadı',
+        error: { code: 'TODO_NOT_FOUND' },
+      });
+    }
+
+    // Check if the todo belongs to the user making the request.
+    if (todo.userId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bu görevi güncelleme yetkiniz yok',
+        error: { code: 'FORBIDDEN' },
+      });
+    }
+
+    // Update the todo with the new values.
+    // Only update fields that are provided in the request body.
+    const updatedTodo = await todo.update({
+      title: title !== undefined ? title : todo.title,
+      description: description !== undefined ? description : todo.description,
+      isCompleted: isCompleted !== undefined ? isCompleted : todo.isCompleted,
+      isPublic: isPublic !== undefined ? isPublic : todo.isPublic,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Görev güncellendi',
+      data: { todo: updatedTodo },
+    });
+  } catch (error) {
+    console.error('Update Todo Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message,
+      error: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+  }
+};
+
+/**
+ * @name   deleteTodo
+ * @desc   Delete a todo for the logged-in user.
+ * @route  DELETE /api/todos/:id
+ * @access Private (requires JWT)
+ */
+export const deleteTodo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Find the todo by its ID.
+    const todo = await Todo.findByPk(id);
+
+    // If the todo doesn't exist, return 404.
+    if (!todo) {
+      return res.status(404).json({
+        success: false,
+        message: 'Görev bulunamadı',
+        error: { code: 'TODO_NOT_FOUND' },
+      });
+    }
+
+    // Check if the todo belongs to the user making the request.
+    if (todo.userId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bu görevi silme yetkiniz yok',
+        error: { code: 'FORBIDDEN' },
+      });
+    }
+
+    // Delete the todo.
+    await todo.destroy();
+
+    return res.status(200).json({ success: true, message: 'Görev silindi' });
+  } catch (error) {
+    console.error('Delete Todo Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message,
+      error: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+  }
+};
