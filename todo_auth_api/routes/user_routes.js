@@ -1,5 +1,5 @@
 import express from 'express';
-import { getMyProfile } from '../controllers/user_controller.js';
+import { getMe, searchUsers, getUserProfile } from '../controllers/user_controller.js';
 import authMiddleware from '../controllers/auth.middleware.js';
 
 const router = express.Router();
@@ -13,6 +13,12 @@ router.use(authMiddleware);
  * @desc    Oturum açmış kullanıcının profil bilgilerini getirir.
  * @access  Private (authMiddleware tarafından korunuyor)
  */
-router.get('/me', getMyProfile);
+router.get('/me', getMe);
+
+// Search for users
+router.get('/search', searchUsers);
+
+// Get a specific user's profile
+router.get('/:userId', getUserProfile);
 
 export default router;
