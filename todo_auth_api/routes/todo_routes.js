@@ -1,28 +1,32 @@
 import express from 'express';
 import { body } from 'express-validator';
-
-// Import the middleware and controller
-import authMiddleware from '../middleware/auth.middleware.js';
-import { getMyTodos, createTodo } from '../controllers/todo_controller.js';
+import {
+  createTodo,
+  getMyTodos,
+  updateTodo,
+  deleteTodo,
+} from '../controllers/todo_controller.js';
+import authMiddleware from '../controllers/auth.middleware.js';
 
 const router = express.Router();
 
-// @route   GET /api/todos/mytodos
-// @desc    Get all todos for the current user
-// @access  Private
-router.get('/mytodos', authMiddleware, getMyTodos);
+// Apply the authentication middleware to all routes in this file.
+router.use(authMiddleware);
 
-// @route   POST /api/todos
-// @desc    Create a new todo
-// @access  Private
+// GET /api/todos/mytodos - Get all todos for the logged-in user
+router.get('/mytodos', getMyTodos);
+
+// POST /api/todos - Create a new todo
 router.post(
   '/',
-  authMiddleware,
-  [
-    // Validation rule: title must not be empty and should be between 1 and 200 characters.
-    body('title', 'Başlık boş olamaz').notEmpty().isLength({ min: 1, max: 200 }),
-  ],
+  [body('title', 'Başlık boş olamaz').notEmpty().isString().trim()],
   createTodo
 );
+
+// PATCH /api/todos/:id - Update a specific todo
+router.patch('/:id', updateTodo);
+
+// DELETE /api/todos/:id - Delete a specific todo
+router.delete('/:id', deleteTodo);
 
 export default router;
