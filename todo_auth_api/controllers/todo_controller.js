@@ -1,4 +1,4 @@
-import Todo from '../src/models/Todo.model.js';
+import Todo from '../models/Todo.js';
 import { validationResult } from 'express-validator';
 
 /**
