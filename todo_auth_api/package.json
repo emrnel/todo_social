@@ -5,8 +5,10 @@
   "description": "",
   "main": "db.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "mocha --timeout 5000 --exit todo_api.test.js",
+    "db:migrate": "npx sequelize-cli db:migrate --sequelizerc-path .sequelizerc.cjs"
   },
   "keywords": [],
   "author": "",
@@ -21,5 +23,11 @@
     "mysql2": "^3.15.3",
     "pg": "^8.16.3",
     "sequelize": "^6.37.7"
+  }
+,
+  "devDependencies": {
+    "chai": "^6.2.1",
+    "mocha": "^11.7.5",
+    "supertest": "^7.1.4"
   }
 }
