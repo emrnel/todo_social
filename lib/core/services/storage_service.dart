@@ -1,19 +1,25 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class SecureStorage {
-  static const _storage = FlutterSecureStorage();
+final storageServiceProvider = Provider<StorageService>((ref) {
+  return StorageService();
+});
 
-  static const _tokenKey = 'auth_token';
+class StorageService {
+  final _storage = const FlutterSecureStorage();
 
-  static Future<void> saveToken(String token) async {
-    await _storage.write(key: _tokenKey, value: token);
+  // Save token securely
+  Future<void> writeToken(String token) async {
+    await _storage.write(key: 'jwt_token', value: token);
   }
 
-  static Future<String?> getToken() async {
-    return await _storage.read(key: _tokenKey);
+  // Read token from secure storage
+  Future<String?> readToken() async {
+    return await _storage.read(key: 'jwt_token');
   }
 
-  static Future<void> deleteToken() async {
-    await _storage.delete(key: _tokenKey);
+  // Delete token (logout)
+  Future<void> deleteToken() async {
+    await _storage.delete(key: 'jwt_token');
   }
 }
