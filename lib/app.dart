@@ -1,41 +1,29 @@
 // lib/app.dart
 import 'package:flutter/material.dart';
-import 'package:todo_social/features/splash/presentation/screens/splash_screen.dart'; // Import splash screen
-import 'package:todo_social/features/auth/presentation/screens/login_screen.dart';   // Import login screen
-import 'package:todo_social/features/home/presentation/screens/home_screen.dart';   // Import home screen
-import 'package:todo_social/features/auth/presentation/screens/register_screen.dart';   // Import register screen
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:todo_social/core/navigation/app_router.dart';
 
-
-// This is the root widget 'App' that main.dart calls.
-class App extends StatelessWidget {
+// Root widget now reads the GoRouter from Riverpod and provides it to
+// the MaterialApp.router so `GoRouter.of(context)` is available.
+class App extends ConsumerWidget {
   const App({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      // App title used by the OS
-      title: 'Todo Social', 
-      
-      // Hides the debug banner
-      debugShowCheckedModeBanner: false, 
-      
-      // Defines the overall visual theme
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+
+    return MaterialApp.router(
+      title: 'Todo Social',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-
-      // Define all named routes for navigation
-      routes: {
-        '/': (context) => const SplashScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const HomeScreen(),
-         '/register': (context) => const RegisterScreen()
-      },
-      
-      // The first route to show when the app starts
-      initialRoute: '/', 
+      // Provide the GoRouter to MaterialApp
+      routerDelegate: router.routerDelegate,
+      routeInformationParser: router.routeInformationParser,
+      routeInformationProvider: router.routeInformationProvider,
     );
   }
 }
