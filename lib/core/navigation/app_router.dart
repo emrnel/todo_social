@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:todo_social/core/auth/auth_provider.dart';
 import 'package:todo_social/core/navigation/routes.dart';
+import 'package:todo_social/core/auth/auth_state.dart';
 
 // Ekranları import et (Henüz olmasalar da)
 import 'package:todo_social/features/splash/presentation/screens/splash_screen.dart';
