@@ -5,10 +5,8 @@ import 'package:todo_social/data/models/auth_response_model.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
   final dio = Dio(BaseOptions(
-    // Use correct base URL based on emulator/device
-    // Android Emulator: http://10.0.2.2:3000/api
-    // iOS Simulator: http://localhost:3000/api
-    baseUrl: 'http://localhost:3000/api',
+    // Android Emulator için 10.0.2.2 kullan
+    baseUrl: 'http://10.0.2.2:3000/api',
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 10),
     headers: {'Content-Type': 'application/json'},
