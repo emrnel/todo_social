@@ -6,25 +6,25 @@ import 'package:todo_social/core/auth/auth_provider.dart';
 import 'package:todo_social/core/navigation/routes.dart';
 import 'package:todo_social/core/auth/auth_state.dart';
 
-// Ekranları import et (Henüz olmasalar da)
+// Import screens
 import 'package:todo_social/features/splash/presentation/screens/splash_screen.dart';
 import 'package:todo_social/features/auth/presentation/screens/login_screen.dart';
 import 'package:todo_social/features/auth/presentation/screens/register_screen.dart';
 import 'package:todo_social/features/home/presentation/screens/home_screen.dart';
+import 'package:todo_social/features/social/presentation/screens/user_profile_screen.dart';
+import 'package:todo_social/features/social/presentation/screens/search_screen.dart';
+import 'package:todo_social/features/todo/presentation/screens/add_todo_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  // Yönlendirme mantığı için AuthProvider'ı dinle
   final authState = ref.watch(authProvider);
 
   return GoRouter(
     initialLocation: Routes.splash,
     routes: [
-      // 1. Splash Ekranı
       GoRoute(
         path: Routes.splash,
         builder: (context, state) => const SplashScreen(),
       ),
-      // 2. Auth Ekranları
       GoRoute(
         path: Routes.login,
         builder: (context, state) => const LoginScreen(),
@@ -33,46 +33,60 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.register,
         builder: (context, state) => const RegisterScreen(),
       ),
-      // 3. Ana Ekran
       GoRoute(
         path: Routes.home,
         builder: (context, state) => const HomeScreen(),
       ),
+      // FE-CORE-39: Update myProfile to use UserProfileScreen with null username
+      GoRoute(
+        path: Routes.myProfile,
+        builder: (context, state) => const UserProfileScreen(username: null),
+      ),
+      GoRoute(
+        path: Routes.addTodo,
+        builder: (context, state) => const AddTodoScreen(),
+      ),
+      // FE-CORE-33: Add search route
+      GoRoute(
+        path: Routes.search,
+        builder: (context, state) => const SearchScreen(),
+      ),
+      // FE-CORE-36, FE-CORE-37, FE-CORE-38: Add userProfile dynamic route
+      GoRoute(
+        path: Routes.userProfile,
+        builder: (context, state) {
+          // FE-CORE-37: Get username from path parameters
+          final username = state.pathParameters['username'];
+
+          // FE-CORE-38: Call UserProfileScreen with username
+          return UserProfileScreen(username: username);
+        },
+      ),
     ],
-    // 4. YÖNLENDİRME (SENİN GÖREVİNİN EN KRİTİK KISMI)
     redirect: (BuildContext context, GoRouterState state) {
       final currentLocation = state.matchedLocation;
 
-      // Durum 1: Uygulama daha ne olduğunu bilmiyor (unknown)
       if (authState == AuthState.unknown) {
-        // Splash'te değilse Splash'e yolla, orası durumu belirleyecek
         return currentLocation == Routes.splash ? null : Routes.splash;
       }
 
-      // Durum 2: Kullanıcı giriş yapmamış (unauthenticated)
       if (authState == AuthState.unauthenticated) {
-        // Login veya Register ekranındaysa dokunma
         if (currentLocation == Routes.login ||
             currentLocation == Routes.register) {
           return null;
         }
-        // Başka bir yerdeyse (örn: /home'a gitmeye çalıştı) Login'e yolla
         return Routes.login;
       }
 
-      // Durum 3: Kullanıcı giriş yapmış (authenticated)
       if (authState == AuthState.authenticated) {
-        // Splash, Login veya Register ekranındaysa Ana Sayfaya yolla
         if (currentLocation == Routes.splash ||
             currentLocation == Routes.login ||
             currentLocation == Routes.register) {
           return Routes.home;
         }
-        // Zaten /home veya altındaysa dokunma
         return null;
       }
 
-      // Varsayılan olarak hiçbir şey yapma
       return null;
     },
   );
