@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:todo_social/core/services/auth_service.dart';
+import 'package:todo_social/core/auth/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -22,7 +23,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Use ref.read to access the service
       final authService = ref.read(authServiceProvider);
 
       final response = await authService.login(
@@ -31,10 +31,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
 
       if (mounted && response.success) {
+        // Auth state'i güncelle
+        ref.read(authProvider.notifier).setAuthenticated();
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login Successful!')),
         );
-        // context.go('/home'); // TODO: Navigate to home
+
+        // Home'a yönlendir
+        context.go('/home');
       }
     } catch (e) {
       if (mounted) {
@@ -78,10 +83,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        // Replaced deprecated withOpacity
-                        backgroundColor: Theme.of(context)
-                            .primaryColor
-                            .withValues(alpha: 0.8),
+                        backgroundColor:
+                            Theme.of(context).primaryColor.withOpacity(0.8),
                       ),
                       onPressed: _login,
                       child: const Text('Login',

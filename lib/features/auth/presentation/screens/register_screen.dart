@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:todo_social/core/services/auth_service.dart';
+import 'package:todo_social/core/auth/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -88,9 +89,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context)
-                            .primaryColor
-                            .withValues(alpha: 0.8),
+                        backgroundColor:
+                            Theme.of(context).primaryColor.withOpacity(0.8),
                       ),
                       onPressed: _register,
                       child: const Text('Register',
