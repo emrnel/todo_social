@@ -7,7 +7,7 @@ const setupAssociations = () => {
   // A user can have many todos.
   User.hasMany(Todo, { as: 'Todos', foreignKey: 'userId', onDelete: 'CASCADE' });
   // A todo belongs to one user.
-  Todo.belongsTo(User, { as: 'User', foreignKey: 'userId' });
+  Todo.belongsTo(User, { as: 'author', foreignKey: 'userId' });
 
   // User-User Relationship (Many-to-Many for Followers)
   // A user can follow many other users.
