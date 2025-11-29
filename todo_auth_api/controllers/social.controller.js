@@ -94,7 +94,7 @@ export const getFeed = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: 'Akış getirildi. Henüz kimseyi takip etmiyorsunuz.',
-        data: { todos: [] },
+        data: { feed: [] },
       });
     }
 
@@ -108,7 +108,7 @@ export const getFeed = async (req, res) => {
       },
       include: {
         model: User,
-        as: 'User', // This alias must match the association alias if one is defined.
+        as: 'author', // Use a more descriptive alias for the response
         attributes: ['id', 'username'], // Include author's info
       },
       order: [['createdAt', 'DESC']],
@@ -118,7 +118,7 @@ export const getFeed = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Akış başarıyla getirildi.',
-      data: { todos: feedTodos },
+      data: { feed: feedTodos },
     });
   } catch (error) {
     console.error('Get Feed Error:', error);
