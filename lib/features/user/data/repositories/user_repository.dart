@@ -39,6 +39,17 @@ class UserRepository {
     }
   }
 
+  Future<UserModel> getMyProfile() async {
+    try {
+      final response = await _dio.get('/users/me');
+      return UserModel.fromJson(response.data['data']['user']);
+    } on DioException catch (e) {
+      // TODO: Proper error handling
+      print('Error getting my profile: $e');
+      rethrow;
+    }
+  }
+
   Future<void> followUser(int userId) async {
     try {
       await _dio.post('/users/follow/$userId');
