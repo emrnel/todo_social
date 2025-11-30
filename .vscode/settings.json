@@ -1,4 +1,4 @@
 {
-    "cmake.sourceDirectory": "D:/dev/flutter_projects/CSE344/todo_social/linux",
+    "cmake.sourceDirectory": "${workspaceFolder}/linux",
     "java.configuration.updateBuildConfiguration": "interactive"
 }
