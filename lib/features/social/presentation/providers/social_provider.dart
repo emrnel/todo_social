@@ -10,12 +10,16 @@ class SocialState {
   final bool isSearchLoading;
   final UserProfileModel? userProfile;
   final bool isProfileLoading;
+  final UserModel? currentUser;
+  final bool isCurrentUserLoading;
 
   SocialState({
     this.searchResults = const [],
     this.isSearchLoading = false,
     this.userProfile,
     this.isProfileLoading = false,
+    this.currentUser,
+    this.isCurrentUserLoading = false,
   });
 
   SocialState copyWith({
@@ -23,12 +27,16 @@ class SocialState {
     bool? isSearchLoading,
     UserProfileModel? userProfile,
     bool? isProfileLoading,
+    UserModel? currentUser,
+    bool? isCurrentUserLoading,
   }) {
     return SocialState(
       searchResults: searchResults ?? this.searchResults,
       isSearchLoading: isSearchLoading ?? this.isSearchLoading,
       userProfile: userProfile ?? this.userProfile,
       isProfileLoading: isProfileLoading ?? this.isProfileLoading,
+      currentUser: currentUser ?? this.currentUser,
+      isCurrentUserLoading: isCurrentUserLoading ?? this.isCurrentUserLoading,
     );
   }
 }
@@ -92,6 +100,17 @@ class SocialNotifier extends StateNotifier<SocialState> {
       // Revert on failure
       state = state.copyWith(userProfile: originalProfile);
       // TODO: Show an error message to the user
+    }
+  }
+
+  Future<void> fetchMyProfile() async {
+    state = state.copyWith(isCurrentUserLoading: true);
+    try {
+      final user = await _userRepository.getMyProfile();
+      state = state.copyWith(currentUser: user, isCurrentUserLoading: false);
+    } catch (e) {
+      state = state.copyWith(isCurrentUserLoading: false);
+      // TODO: Handle error state in UI
     }
   }
 }
