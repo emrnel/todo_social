@@ -1,9 +1,10 @@
 import Todo from '../models/Todo.js';
+import Routine from '../models/Routine.js';
 import { validationResult } from 'express-validator';
 
 /**
  * @name   getMyTodos
- * @desc   Get all todos for the currently logged-in user.
+ * @desc   Get all todos and routines for the currently logged-in user.
  * @route  GET /api/todos/mytodos
  * @access Private (requires JWT)
  */
@@ -12,16 +13,22 @@ export const getMyTodos = async (req, res) => {
     // The user ID is attached to the request by the authMiddleware.
     const userId = req.user.id;
 
-    // Find all todos in the database that belong to this user.
-    const todos = await Todo.findAll({
-      where: { userId: userId },
-      order: [['createdAt', 'DESC']], // Show newest todos first.
-    });
+    // Find all todos and routines for this user in parallel.
+    const [todos, routines] = await Promise.all([
+      Todo.findAll({
+        where: { userId: userId },
+        order: [['createdAt', 'DESC']], // Show newest todos first.
+      }),
+      Routine.findAll({
+        where: { userId: userId },
+        order: [['createdAt', 'DESC']],
+      }),
+    ]);
 
     return res.status(200).json({
       success: true,
       message: 'Kullanıcının yapılacaklar listesi başarıyla getirildi',
-      data: { todos },
+      data: { todos, routines },
     });
   } catch (error) {
     console.error('Get My Todos Error:', error);

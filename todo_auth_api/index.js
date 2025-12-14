@@ -10,6 +10,7 @@ import authRoutes from './routes/auth_routes.js';
 import userRoutes from './routes/user_routes.js';
 import todoRoutes from './routes/todo_routes.js';
 import socialRoutes from './routes/social.routes.js';
+import routineRoutes from './routes/routine.routes.js';
 import setupAssociations from './models/associations.js';
 
 // .env dosyasındaki değişkenleri yükle
@@ -50,6 +51,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/todos', todoRoutes);
 app.use('/api/social', socialRoutes);
+app.use('/api/routines', routineRoutes);
 
 app.get('/', (req, res) => {
   res.send('Todo Social API Çalışıyor!');

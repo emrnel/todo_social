@@ -1,6 +1,7 @@
 import User from './User.js';
 import Todo from './Todo.js';
 import Follow from './Follow.js';
+import Routine from './Routine.js';
 
 const setupAssociations = () => {
   // User-Todo Relationship (One-to-Many)
@@ -25,6 +26,11 @@ const setupAssociations = () => {
     foreignKey: 'followingId', // The key in the Follow table that points to the source user (the one being followed)
     otherKey: 'followerId', // The key in the Follow table that points to the target user (the one doing the following)
   });
+
+  // User-Routine Relationship (One-to-Many)
+  // A user can have many routines.
+  User.hasMany(Routine, { as: 'Routines', foreignKey: 'userId', onDelete: 'CASCADE' });
+  Routine.belongsTo(User, { as: 'owner', foreignKey: 'userId' });
 };
 
 export default setupAssociations;
