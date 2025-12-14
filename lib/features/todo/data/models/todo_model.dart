@@ -7,6 +7,8 @@ class TodoModel {
   final bool isPublic;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? type;
+  final String? recurrenceType;
 
   TodoModel({
     required this.id,
@@ -17,6 +19,8 @@ class TodoModel {
     required this.isPublic,
     required this.createdAt,
     required this.updatedAt,
+    this.type,
+    this.recurrenceType,
   });
 
   factory TodoModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +33,8 @@ class TodoModel {
       isPublic: json['isPublic'],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
+      type: json['type'],
+      recurrenceType: json['recurrenceType'],
     );
   }
 
@@ -42,6 +48,8 @@ class TodoModel {
       'isPublic': isPublic,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'type': type,
+      'recurrenceType': recurrenceType,
     };
   }
 
@@ -54,6 +62,8 @@ class TodoModel {
     bool? isPublic,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? type,
+    String? recurrenceType,
   }) {
     return TodoModel(
       id: id ?? this.id,
@@ -64,6 +74,8 @@ class TodoModel {
       isPublic: isPublic ?? this.isPublic,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      type: type ?? this.type,
+      recurrenceType: recurrenceType ?? this.recurrenceType,
     );
   }
 }
