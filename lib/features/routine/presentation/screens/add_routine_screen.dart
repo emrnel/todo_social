@@ -16,6 +16,7 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   String _recurrenceType = 'daily';
+  bool _isPublic = false; // Public seçeneği eklendi
   bool _isLoading = false;
 
   final List<String> _recurrenceOptions = [
@@ -28,7 +29,7 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
   Future<void> _saveRoutine() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title is required')),
+        const SnackBar(content: Text('Başlık gereklidir')),
       );
       return;
     }
@@ -41,18 +42,18 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
             description: _descriptionController.text.trim().isEmpty
                 ? null
                 : _descriptionController.text.trim(),
-            isPublic: false,
+            isPublic: _isPublic, // Public değeri gönderiliyor
             recurrenceType: _recurrenceType,
           );
       if (!mounted) return;
       final state = ref.read(routineProvider);
       if (state.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${state.errorMessage}')),
+          SnackBar(content: Text('Hata: ${state.errorMessage}')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Routine created successfully!')),
+          const SnackBar(content: Text('Rutin başarıyla oluşturuldu!')),
         );
         context.pop();
       }
@@ -64,25 +65,25 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Routine')),
+      appBar: AppBar(title: const Text('Rutin Ekle')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             CustomTextField(
               controller: _titleController,
-              label: 'Title',
+              label: 'Başlık',
             ),
             const SizedBox(height: 16),
             CustomTextField(
               controller: _descriptionController,
-              label: 'Description',
+              label: 'Açıklama',
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _recurrenceType,
               decoration: const InputDecoration(
-                labelText: 'Recurrence',
+                labelText: 'Tekrar',
                 border: OutlineInputBorder(),
               ),
               items: _recurrenceOptions.map((String value) {
@@ -97,10 +98,19 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
                 }
               },
             ),
+            const SizedBox(height: 12),
+            // PUBLIC SEÇENEĞİ EKLENDİ
+            SwitchListTile(
+              value: _isPublic,
+              onChanged: (v) => setState(() => _isPublic = v),
+              title: const Text('Herkese Açık'),
+              subtitle:
+                  const Text('Takipçilerinizin görmesini istiyorsanız açın'),
+            ),
             const SizedBox(height: 24),
             CustomButton(
               onPressed: _saveRoutine,
-              text: 'Save Routine',
+              text: 'Rutini Kaydet',
               isLoading: _isLoading,
             ),
           ],

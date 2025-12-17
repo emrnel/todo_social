@@ -43,8 +43,8 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _currentIndex,
         children: _screens,
       ),
-      // FAB sadece My Todos ve Feed tab'larında görünsün
-      floatingActionButton: (_currentIndex == 0 || _currentIndex == 1)
+      // FAB SADECE My Todos tab'ında (index 0) görünsün
+      floatingActionButton: _currentIndex == 0
           ? FloatingActionButton(
               key: _fabKey,
               onPressed: () async {

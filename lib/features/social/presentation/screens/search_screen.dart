@@ -56,7 +56,7 @@ class _SearchScreenContentState extends ConsumerState<SearchScreenContent> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'Search users...',
+              hintText: 'Kullanıcı ara...',
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -101,13 +101,17 @@ class _SearchScreenContentState extends ConsumerState<SearchScreenContent> {
                   final user = results[index];
                   return ListTile(
                     leading: CircleAvatar(
+                      backgroundColor: Colors.teal,
                       child: Text(
                         user.username[0].toUpperCase(),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     title: Text('@${user.username}'),
-                    subtitle: Text(user.email),
+                    subtitle: Text(user.email ?? 'Email yok'), // NULL KONTROLÜ
                     onTap: () =>
                         context.push(Routes.userProfilePath(user.username)),
                   );
