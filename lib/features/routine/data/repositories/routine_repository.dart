@@ -6,14 +6,12 @@ class RoutineRepository {
 
   RoutineRepository(this._dio);
 
+  // Note: Backend doesn't have a separate GET endpoint for routines
+  // Routines are fetched together with todos via /todos/mytodos
+  // This method is kept for future use if needed
   Future<List<RoutineModel>> getMyRoutines() async {
-    try {
-      final response = await _dio.get('/routines/myroutines');
-      final List<dynamic> routineList = response.data['data']['routines'] ?? [];
-      return routineList.map((json) => RoutineModel.fromJson(json)).toList();
-    } on DioException catch (_) {
-      rethrow;
-    }
+    // Return empty list since routines come from getMyTodos
+    return [];
   }
 
   Future<RoutineModel> addRoutine(

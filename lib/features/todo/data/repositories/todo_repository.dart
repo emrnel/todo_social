@@ -1,20 +1,27 @@
 import 'package:dio/dio.dart';
-
 import 'package:todo_social/data/models/todo_model.dart';
+import 'package:todo_social/data/models/routine_model.dart';
 
 class TodoRepository {
   final Dio _dio;
 
   TodoRepository(this._dio);
 
-  Future<List<TodoModel>> getMyTodos() async {
+  // Backend returns both todos and routines in getMyTodos
+  Future<Map<String, dynamic>> getMyTodosAndRoutines() async {
     try {
       final response = await _dio.get('/todos/mytodos');
-      final List<dynamic> todoList = response.data['data']['todos'];
-      return todoList.map((json) => TodoModel.fromJson(json)).toList();
+      final data = response.data['data'];
+
+      final List<dynamic> todoList = data['todos'] ?? [];
+      final List<dynamic> routineList = data['routines'] ?? [];
+
+      return {
+        'todos': todoList.map((json) => TodoModel.fromJson(json)).toList(),
+        'routines':
+            routineList.map((json) => RoutineModel.fromJson(json)).toList(),
+      };
     } on DioException catch (_) {
-      // TODO: Proper error handling
-      // print('Error fetching todos: $e');
       rethrow;
     }
   }
@@ -32,8 +39,6 @@ class TodoRepository {
       );
       return TodoModel.fromJson(response.data['data']['todo']);
     } on DioException catch (_) {
-      // TODO: Proper error handling
-      // print('Error adding todo: $e');
       rethrow;
     }
   }
@@ -46,8 +51,6 @@ class TodoRepository {
       );
       return TodoModel.fromJson(response.data['data']['todo']);
     } on DioException catch (_) {
-      // TODO: Proper error handling
-      // print('Error updating todo status: $e');
       rethrow;
     }
   }
@@ -56,8 +59,6 @@ class TodoRepository {
     try {
       await _dio.delete('/todos/$todoId');
     } on DioException catch (_) {
-      // TODO: Proper error handling
-      // print('Error deleting todo: $e');
       rethrow;
     }
   }
