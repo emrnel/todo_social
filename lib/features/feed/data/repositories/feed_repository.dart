@@ -11,9 +11,9 @@ class FeedRepository {
       final response = await _dio.get('/feed');
       final List<dynamic> feedList = response.data['data']['feed'];
       return feedList.map((json) => FeedItemModel.fromJson(json)).toList();
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       // TODO: Proper error handling
-      print('Error fetching feed: $e');
+      // print('Error fetching feed: $e');
       rethrow;
     }
   }

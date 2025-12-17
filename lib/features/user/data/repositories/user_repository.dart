@@ -21,9 +21,9 @@ class UserRepository {
       );
       final List<dynamic> userList = response.data['data']['users'];
       return userList.map((json) => UserModel.fromJson(json)).toList();
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       // TODO: Proper error handling
-      print('Error searching users: $e');
+      // print('Error searching users: $e');
       rethrow;
     }
   }
@@ -32,9 +32,9 @@ class UserRepository {
     try {
       final response = await _dio.get('/users/profile/$username');
       return UserProfileModel.fromJson(response.data['data']);
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       // TODO: Proper error handling
-      print('Error getting user profile: $e');
+      // print('Error getting user profile: $e');
       rethrow;
     }
   }
@@ -43,9 +43,9 @@ class UserRepository {
     try {
       final response = await _dio.get('/users/me');
       return UserModel.fromJson(response.data['data']['user']);
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       // TODO: Proper error handling
-      print('Error getting my profile: $e');
+      // print('Error getting my profile: $e');
       rethrow;
     }
   }
@@ -53,9 +53,9 @@ class UserRepository {
   Future<void> followUser(int userId) async {
     try {
       await _dio.post('/users/follow/$userId');
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       // TODO: Proper error handling
-      print('Error following user: $e');
+      // print('Error following user: $e');
       rethrow;
     }
   }
@@ -63,9 +63,9 @@ class UserRepository {
   Future<void> unfollowUser(int userId) async {
     try {
       await _dio.delete('/users/unfollow/$userId');
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       // TODO: Proper error handling
-      print('Error unfollowing user: $e');
+      // print('Error unfollowing user: $e');
       rethrow;
     }
   }
