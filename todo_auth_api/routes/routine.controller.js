@@ -1,4 +1,4 @@
-import { Routine } from '../models/routine.model.js';
+import Routine from '../models/Routine.js';
 
 export const createRoutine = async (req, res) => {
   try {
@@ -12,16 +12,14 @@ export const createRoutine = async (req, res) => {
       });
     }
 
-    const routineId = await Routine.create({
+    const routine = await Routine.create({
       userId,
       title,
       description,
       isPublic: isPublic || false,
       recurrenceType,
-      recurrenceValue
+      recurrenceValue,
     });
-
-    const routine = await Routine.findById(routineId);
 
     res.status(201).json({
       success: true,

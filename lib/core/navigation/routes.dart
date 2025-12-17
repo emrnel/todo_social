@@ -7,6 +7,7 @@ class Routes {
   static const String home = '/home';
   static const String myProfile = '/profile';
   static const String addTodo = '/add-todo';
+  static const String addRoutine = '/add-routine';
 
   // FE-CORE-32: Add search route
   static const String search = '/search';

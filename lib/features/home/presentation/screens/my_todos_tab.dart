@@ -1,77 +1,105 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:todo_social/features/todo/data/models/todo_model.dart';
+import 'package:todo_social/data/models/todo_model.dart';
+import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
+import 'package:todo_social/data/models/routine_model.dart';
+import 'package:todo_social/features/routine/presentation/providers/routine_provider.dart';
 
-class MyTodosTab extends ConsumerWidget {
+class MyTodosTab extends ConsumerStatefulWidget {
   const MyTodosTab({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // TODO: Replace with actual provider call, e.g., ref.watch(myTodosProvider)
-    final List<TodoModel> todos = [
-      TodoModel(
-        id: 1,
-        userId: 1,
-        title: 'Buy Groceries',
-        description: 'Milk, Bread, Eggs',
-        isCompleted: false,
-        isPublic: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        type: 'todo',
-      ),
-      TodoModel(
-        id: 2,
-        userId: 1,
-        title: 'Morning Workout',
-        description: '30 mins cardio',
-        isCompleted: false,
-        isPublic: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        type: 'routine',
-        recurrenceType: 'daily',
-      ),
-    ];
+  ConsumerState<MyTodosTab> createState() => _MyTodosTabState();
+}
 
-    if (todos.isEmpty) {
-      return const Center(
-        child: Text('No todos or routines yet.'),
-      );
+class _MyTodosTabState extends ConsumerState<MyTodosTab> {
+  bool _loaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_loaded) {
+      _loaded = true;
+      Future.microtask(() async {
+        await ref.read(todoProvider.notifier).fetchMyTodos();
+        await ref.read(routineProvider.notifier).fetchMyRoutines();
+      });
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final todoState = ref.watch(todoProvider);
+    final routineState = ref.watch(routineProvider);
+    final List<TodoModel> todos = todoState.todos;
+    final List<RoutineModel> routines = routineState.routines;
+
+    if ((todoState.isLoading || routineState.isLoading) &&
+        todos.isEmpty &&
+        routines.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if ((todoState.errorMessage != null || routineState.errorMessage != null) &&
+        todos.isEmpty &&
+        routines.isEmpty) {
+      return Center(
+          child: Text(
+              'Error: ${todoState.errorMessage ?? routineState.errorMessage}'));
+    }
+
+    if (todos.isEmpty && routines.isEmpty) {
+      return const Center(child: Text('No todos or routines yet.'));
+    }
+    final items = [
+      ...todos.map((t) => {'kind': 'todo', 'todo': t}),
+      ...routines.map((r) => {'kind': 'routine', 'routine': r}),
+    ];
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: todos.length,
+      itemCount: items.length,
       itemBuilder: (context, index) {
-        final item = todos[index];
-        final isRoutine = item.type == 'routine';
-
-        if (isRoutine) {
+        final data = items[index];
+        if (data['kind'] == 'routine') {
+          final r = data['routine'] as RoutineModel;
           return Card(
-            elevation: 2,
             margin: const EdgeInsets.only(bottom: 12),
             color: Colors.green.shade50,
             child: ListTile(
               leading: const Icon(Icons.repeat, color: Colors.green),
-              title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('Recurrence: ${item.recurrenceType ?? 'Daily'}'),
-              trailing: const Icon(Icons.chevron_right),
+              title: Text(r.title,
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text('Recurs: ${r.recurrenceType}'),
+            ),
+          );
+        } else {
+          final t = data['todo'] as TodoModel;
+          return Dismissible(
+            key: ValueKey('todo_${t.id}'),
+            background: Container(color: Colors.redAccent),
+            direction: DismissDirection.endToStart,
+            confirmDismiss: (_) async {
+              await ref.read(todoProvider.notifier).removeTodo(t.id);
+              return false; // managed via provider
+            },
+            child: Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                leading: Checkbox(
+                  value: t.isCompleted,
+                  onChanged: (val) {
+                    if (val != null) {
+                      ref.read(todoProvider.notifier).toggleTodo(t.id, val);
+                    }
+                  },
+                ),
+                title: Text(t.title),
+                subtitle: t.description != null ? Text(t.description!) : null,
+              ),
             ),
           );
         }
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: Checkbox(
-              value: item.isCompleted,
-              onChanged: (val) {},
-            ),
-            title: Text(item.title),
-            subtitle: item.description != null ? Text(item.description!) : null,
-          ),
-        );
       },
     );
   }

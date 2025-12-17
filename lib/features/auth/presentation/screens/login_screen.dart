@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:todo_social/core/auth/auth_provider.dart';
+import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 import 'package:todo_social/core/navigation/routes.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,33 +16,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  bool _isLoading = false;
   bool _obscurePassword = true;
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
-
-    // AuthStateNotifier ile giriş işlemi (token vs kullanılabilir)
-    ref.read(authProvider.notifier).setAuthenticated();
-
-    setState(() => _isLoading = false);
+    // Use ref.read to call the login method without re-building
+    await ref.read(authProvider.notifier).loginUser(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Giriş başarılı!"),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    context.go(Routes.home);
+    // Check auth state to determine success/failure
+    final authState = ref.read(authProvider);
+    if (authState.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Hata: ${authState.errorMessage}"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } else if (authState.authenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Giriş başarılı!"),
+          backgroundColor: Colors.green,
+        ),
+      );
+      context.go(Routes.home);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch auth state for loading indicator
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -67,9 +78,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 40),
-
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(18),
@@ -91,32 +102,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           decoration: InputDecoration(
                             labelText: "E-posta",
                             hintText: "ornek@mail.com",
-                            prefixIcon: const Icon(Icons.email_outlined, color: Colors.blue),
+                            prefixIcon: const Icon(Icons.email_outlined,
+                                color: Colors.blue),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) return "E-posta boş olamaz";
+                            if (value == null || value.isEmpty) {
+                              return "E-posta boş olamaz";
+                            }
                             if (!RegExp(r"^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$")
-                                .hasMatch(value)) return "Geçerli bir e-posta adresi giriniz";
+                                .hasMatch(value)) {
+                              return "Geçerli bir e-posta adresi giriniz";
+                            }
                             return null;
                           },
                         ),
                         const SizedBox(height: 20),
-
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             labelText: "Şifre",
-                            prefixIcon: const Icon(Icons.lock_outline, color: Colors.blue),
+                            prefixIcon: const Icon(Icons.lock_outline,
+                                color: Colors.blue),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
                                 color: Colors.grey,
                               ),
                               onPressed: () {
@@ -127,14 +145,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) return "Şifre boş olamaz";
+                            if (value == null || value.isEmpty) {
+                              return "Şifre boş olamaz";
+                            }
                             return null;
                           },
                         ),
                         const SizedBox(height: 30),
-
                         ElevatedButton(
-                          onPressed: _isLoading ? null : _login,
+                          onPressed: authState.isLoading ? null : _login,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
@@ -143,12 +162,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text("Giriş Yap", style: TextStyle(fontSize: 18)),
+                          child: authState.isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white)
+                              : const Text("Giriş Yap",
+                                  style: TextStyle(fontSize: 18)),
                         ),
                         const SizedBox(height: 10),
-
                         TextButton(
                           onPressed: () => context.go(Routes.register),
                           child: const Text(

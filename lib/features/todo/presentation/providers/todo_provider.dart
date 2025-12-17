@@ -1,22 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/api/api_service.dart';
-import '../../data/repositories/todo_repository.dart';
-import '../../data/models/todo_model.dart';
+import 'package:todo_social/features/todo/data/repositories/todo_repository.dart';
+import 'package:todo_social/data/models/todo_model.dart';
+import 'package:todo_social/core/api/api_service.dart';
 
 // 1. Define the State class
 class TodoState {
   final List<TodoModel> todos;
   final bool isLoading;
+  final String? errorMessage;
 
-  TodoState({this.todos = const [], this.isLoading = false});
+  TodoState({this.todos = const [], this.isLoading = false, this.errorMessage});
 
   TodoState copyWith({
     List<TodoModel>? todos,
     bool? isLoading,
+    String? errorMessage,
   }) {
     return TodoState(
       todos: todos ?? this.todos,
       isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 }
@@ -28,52 +31,49 @@ class TodoNotifier extends StateNotifier<TodoState> {
   TodoNotifier(this._repository) : super(TodoState());
 
   Future<void> fetchMyTodos() async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final todos = await _repository.getMyTodos();
       state = state.copyWith(todos: todos, isLoading: false);
     } catch (e) {
-      // TODO: Handle error state in UI
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
-  Future<void> createTodo(String title, {String? description}) async {
-    state = state.copyWith(isLoading: true);
+  Future<void> createTodo(String title,
+      {String? description, bool isPublic = false}) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final newTodo = await _repository.addTodo(title, description: description);
+      final newTodo = await _repository.addTodo(title,
+          description: description, isPublic: isPublic);
       state = state.copyWith(
         todos: [newTodo, ...state.todos],
         isLoading: false,
       );
     } catch (e) {
-      // TODO: Handle error state in UI
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
-  Future<void> toggleTodo(int todoId) async {
+  Future<void> toggleTodo(int todoId, bool newStatus) async {
     final originalTodos = state.todos;
 
     // Optimistically update the UI
     state = state.copyWith(
       todos: originalTodos.map((todo) {
         if (todo.id == todoId) {
-          return todo.copyWith(isCompleted: !todo.isCompleted);
+          return todo.copyWith(isCompleted: newStatus);
         }
         return todo;
       }).toList(),
     );
 
     try {
-      final todoToToggle = originalTodos.firstWhere((t) => t.id == todoId);
-      final newStatus = !todoToToggle.isCompleted;
       // Make the API call
       await _repository.updateTodoStatus(todoId, newStatus);
     } catch (e) {
       // If the API call fails, revert to the original state
-      state = state.copyWith(todos: originalTodos);
-      // TODO: Show an error message to the user
+      state = state.copyWith(todos: originalTodos, errorMessage: e.toString());
     }
   }
 
@@ -90,8 +90,7 @@ class TodoNotifier extends StateNotifier<TodoState> {
       await _repository.deleteTodo(todoId);
     } catch (e) {
       // If the API call fails, revert to the original state
-      state = state.copyWith(todos: originalTodos);
-      // TODO: Show an error message to the user
+      state = state.copyWith(todos: originalTodos, errorMessage: e.toString());
     }
   }
 }
@@ -102,7 +101,7 @@ final todoRepositoryProvider = Provider<TodoRepository>((ref) {
   return TodoRepository(dio);
 });
 
-// 4. Define the StateNotifierProvider
+// 4. Define the StateNotifier Provider
 final todoProvider = StateNotifierProvider<TodoNotifier, TodoState>((ref) {
   final repository = ref.watch(todoRepositoryProvider);
   return TodoNotifier(repository);

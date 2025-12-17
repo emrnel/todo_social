@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:todo_social/core/common/widgets/custom_button.dart';
 import 'package:todo_social/core/common/widgets/custom_text_field.dart';
+import 'package:todo_social/features/routine/presentation/providers/routine_provider.dart';
 
 class AddRoutineScreen extends ConsumerStatefulWidget {
   const AddRoutineScreen({super.key});
@@ -17,7 +18,12 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
   String _recurrenceType = 'daily';
   bool _isLoading = false;
 
-  final List<String> _recurrenceOptions = ['daily', 'weekly', 'monthly', 'custom'];
+  final List<String> _recurrenceOptions = [
+    'daily',
+    'weekly',
+    'monthly',
+    'custom'
+  ];
 
   Future<void> _saveRoutine() async {
     if (_titleController.text.trim().isEmpty) {
@@ -30,23 +36,25 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Implement the repository call to save the routine
-      // await ref.read(routineRepositoryProvider).createRoutine(...)
-      
-      // Simulate delay for now
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (mounted) {
+      await ref.read(routineProvider.notifier).createRoutine(
+            _titleController.text.trim(),
+            description: _descriptionController.text.trim().isEmpty
+                ? null
+                : _descriptionController.text.trim(),
+            isPublic: false,
+            recurrenceType: _recurrenceType,
+          );
+      if (!mounted) return;
+      final state = ref.read(routineProvider);
+      if (state.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${state.errorMessage}')),
+        );
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Routine created successfully!')),
         );
         context.pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

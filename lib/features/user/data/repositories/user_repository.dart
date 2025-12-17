@@ -13,7 +13,7 @@ class UserRepository {
     if (query.length < 2) {
       return [];
     }
-    
+
     try {
       final response = await _dio.get(
         '/users/search',
