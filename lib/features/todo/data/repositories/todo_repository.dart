@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import '../models/todo_model.dart';
+import 'package:todo_social/data/models/todo_model.dart';
 
 class TodoRepository {
   final Dio _dio;
@@ -19,14 +19,15 @@ class TodoRepository {
     }
   }
 
-  Future<TodoModel> addTodo(String title, {String? description}) async {
+  Future<TodoModel> addTodo(String title,
+      {String? description, bool isPublic = false}) async {
     try {
       final response = await _dio.post(
         '/todos',
         data: {
           'title': title,
           'description': description,
-          'isPublic': false, // Defaulting to false as per contract
+          'isPublic': isPublic,
         },
       );
       return TodoModel.fromJson(response.data['data']['todo']);

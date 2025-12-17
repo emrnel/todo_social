@@ -54,11 +54,20 @@ export const register = async (req, res) => {
       password_hash: hashedPassword,
     });
 
-    // 5. Send a success response
+    // 5. Issue JWT token (same structure as login)
+    const payload = {
+      userId: newUser.id,
+      email: newUser.email,
+    };
+
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+
+    // 6. Send a success response with token + user
     return res.status(201).json({ // 201 Created
       success: true,
       message: "Kullanıcı başarıyla oluşturuldu",
       data: {
+        token,
         user: {
           id: newUser.id,
           username: newUser.username,

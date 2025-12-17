@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:todo_social/core/navigation/routes.dart';
 import 'package:todo_social/features/home/presentation/screens/my_todos_tab.dart';
+import 'package:todo_social/features/home/presentation/screens/feed_tab.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,19 +26,24 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _currentIndex,
         children: const [
           MyTodosTab(),
-          Center(child: Text('Feed Tab')),
+          FeedTab(),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         key: _fabKey,
         onPressed: () async {
+          // Capture router before async gaps to avoid context-after-await lint
+          final router = GoRouter.of(context);
           // Calculate position to show menu near the FAB
-          final RenderBox button = _fabKey.currentContext!.findRenderObject() as RenderBox;
-          final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+          final RenderBox button =
+              _fabKey.currentContext!.findRenderObject() as RenderBox;
+          final RenderBox overlay =
+              Overlay.of(context).context.findRenderObject() as RenderBox;
           final RelativeRect position = RelativeRect.fromRect(
             Rect.fromPoints(
               button.localToGlobal(Offset.zero, ancestor: overlay),
-              button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+              button.localToGlobal(button.size.bottomRight(Offset.zero),
+                  ancestor: overlay),
             ),
             Offset.zero & overlay.size,
           );
@@ -68,12 +74,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           );
-          
+
           if (!mounted) return;
           if (value == 'todo') {
-            context.push('/add-todo');
+            router.push('/add-todo');
           } else if (value == 'routine') {
-            context.push('/add-routine');
+            router.push('/add-routine');
           }
         },
         child: const Icon(Icons.add),

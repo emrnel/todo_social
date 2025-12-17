@@ -31,9 +31,9 @@ const startServer = async () => {
     setupAssociations();
     console.log('Model ilişkileri (associations) kuruldu.');
 
-    // SQLite için tabloları otomatik oluştur
-    await sequelize.sync({ alter: true });
-    console.log('Veritabanı modelleri senkronize edildi.');
+    // SQLite için tabloları temiz ve tutarlı şekilde oluştur
+    await sequelize.sync({ force: true });
+    console.log('Veritabanı modelleri senkronize edildi (force: true).');
 
   } catch (error) {
     console.error('MySQL bağlantı hatası:', error.message);

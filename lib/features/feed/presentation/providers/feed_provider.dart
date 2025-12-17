@@ -1,24 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/api/api_service.dart';
-import '../../data/models/feed_item_model.dart';
-import '../../data/repositories/feed_repository.dart';
+import 'package:todo_social/features/feed/data/models/feed_item_model.dart';
+import 'package:todo_social/features/feed/data/repositories/feed_repository.dart';
+import 'package:todo_social/core/api/api_service.dart';
 
 class FeedState {
   final List<FeedItemModel> feedItems;
   final bool isLoading;
+  final String? errorMessage;
 
   FeedState({
     this.feedItems = const [],
     this.isLoading = false,
+    this.errorMessage,
   });
 
   FeedState copyWith({
     List<FeedItemModel>? feedItems,
     bool? isLoading,
+    String? errorMessage,
   }) {
     return FeedState(
       feedItems: feedItems ?? this.feedItems,
       isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 }
@@ -29,13 +33,12 @@ class FeedNotifier extends StateNotifier<FeedState> {
   FeedNotifier(this._feedRepository) : super(FeedState());
 
   Future<void> fetchFeed() async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final items = await _feedRepository.getFeed();
       state = state.copyWith(feedItems: items, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false);
-      // TODO: Handle error state in UI
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 }

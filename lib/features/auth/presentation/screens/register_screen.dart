@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:todo_social/core/auth/auth_provider.dart';
+import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 import 'package:todo_social/core/navigation/routes.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,33 +17,60 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _passwordAgainController = TextEditingController();
+  final TextEditingController _passwordAgainController =
+      TextEditingController();
 
-  bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscurePasswordAgain = true;
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    // Şifre eşleşme kontrolü
+    if (_passwordController.text != _passwordAgainController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Şifreler eşleşmiyor!"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-    // Kullanıcının AuthStateNotifier'ını güncelle
-    ref.read(authProvider.notifier).setAuthenticated();
-
-    setState(() => _isLoading = false);
+    // Use ref.read to call the register method
+    await ref.read(authProvider.notifier).registerUser(
+          username: _usernameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Kayıt başarılı!')),
-    );
-
-    context.go(Routes.home);
+    // Check auth state to determine success/failure
+    final authState = ref.read(authProvider);
+    if (authState.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Hata: ${authState.errorMessage}"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } else if (authState.authenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Kayıt başarılı!"),
+          backgroundColor: Colors.green,
+        ),
+      );
+      context.go(Routes.home);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch auth state for loading indicator
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -69,7 +96,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 30),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 35),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 35),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(18),
@@ -91,15 +119,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           decoration: InputDecoration(
                             labelText: "E-posta",
                             hintText: "ornek@mail.com",
-                            prefixIcon: const Icon(Icons.email_outlined, color: Colors.blue),
+                            prefixIcon: const Icon(Icons.email_outlined,
+                                color: Colors.blue),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) return "E-posta boş olamaz.";
+                            if (value == null || value.isEmpty) {
+                              return "E-posta boş olamaz.";
+                            }
                             if (!RegExp(r"^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$")
-                                .hasMatch(value)) return "Geçerli bir e-posta giriniz.";
+                                .hasMatch(value)) {
+                              return "Geçerli bir e-posta giriniz.";
+                            }
                             return null;
                           },
                         ),
@@ -108,13 +141,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           controller: _usernameController,
                           decoration: InputDecoration(
                             labelText: "Kullanıcı Adı",
-                            prefixIcon: const Icon(Icons.person, color: Colors.blue),
+                            prefixIcon:
+                                const Icon(Icons.person, color: Colors.blue),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          validator: (value) =>
-                          value == null || value.isEmpty ? "Kullanıcı adı boş olamaz" : null,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Kullanıcı adı boş olamaz";
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 20),
                         TextFormField(
@@ -122,20 +160,30 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             labelText: "Şifre",
-                            prefixIcon: const Icon(Icons.lock_outline, color: Colors.blue),
+                            prefixIcon: const Icon(Icons.lock_outline,
+                                color: Colors.blue),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
                               ),
-                              onPressed: () =>
-                                  setState(() => _obscurePassword = !_obscurePassword),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
                             ),
                           ),
-                          validator: (value) =>
-                          value == null || value.isEmpty ? "Şifre boş olamaz" : null,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Şifre boş olamaz";
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 20),
                         TextFormField(
@@ -143,24 +191,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           obscureText: _obscurePasswordAgain,
                           decoration: InputDecoration(
                             labelText: "Şifre (Tekrar)",
-                            prefixIcon: const Icon(Icons.lock_reset, color: Colors.blue),
+                            prefixIcon: const Icon(Icons.lock_reset,
+                                color: Colors.blue),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscurePasswordAgain ? Icons.visibility_off : Icons.visibility,
+                                _obscurePasswordAgain
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
                               ),
-                              onPressed: () =>
-                                  setState(() => _obscurePasswordAgain = !_obscurePasswordAgain),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePasswordAgain =
+                                      !_obscurePasswordAgain;
+                                });
+                              },
                             ),
                           ),
-                          validator: (value) =>
-                          value != _passwordController.text ? "Şifreler eşleşmiyor" : null,
+                          validator: (value) {
+                            if (value != _passwordController.text) {
+                              return "Şifreler eşleşmiyor";
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 30),
                         ElevatedButton(
-                          onPressed: _isLoading ? null : _register,
+                          onPressed: authState.isLoading ? null : _register,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
@@ -169,9 +228,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text("Kayıt Ol", style: TextStyle(fontSize: 18)),
+                          child: authState.isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white)
+                              : const Text("Kayıt Ol",
+                                  style: TextStyle(fontSize: 18)),
                         ),
                         const SizedBox(height: 16),
                         TextButton(

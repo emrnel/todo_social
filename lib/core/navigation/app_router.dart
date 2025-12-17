@@ -2,9 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:todo_social/core/auth/auth_provider.dart';
+import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 import 'package:todo_social/core/navigation/routes.dart';
-import 'package:todo_social/core/auth/auth_state.dart';
 
 // Import screens
 import 'package:todo_social/features/splash/presentation/screens/splash_screen.dart';
@@ -14,6 +13,7 @@ import 'package:todo_social/features/home/presentation/screens/home_screen.dart'
 import 'package:todo_social/features/social/presentation/screens/user_profile_screen.dart';
 import 'package:todo_social/features/social/presentation/screens/search_screen.dart';
 import 'package:todo_social/features/todo/presentation/screens/add_todo_screen.dart';
+import 'package:todo_social/features/routine/presentation/screens/add_routine_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -46,6 +46,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.addTodo,
         builder: (context, state) => const AddTodoScreen(),
       ),
+      GoRoute(
+        path: Routes.addRoutine,
+        builder: (context, state) => const AddRoutineScreen(),
+      ),
       // FE-CORE-33: Add search route
       GoRoute(
         path: Routes.search,
@@ -66,11 +70,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (BuildContext context, GoRouterState state) {
       final currentLocation = state.matchedLocation;
 
-      if (authState == AuthState.unknown) {
+      // Use instance state flags instead of static access
+      if (authState.unknown) {
         return currentLocation == Routes.splash ? null : Routes.splash;
       }
 
-      if (authState == AuthState.unauthenticated) {
+      if (authState.unauthenticated) {
         if (currentLocation == Routes.login ||
             currentLocation == Routes.register) {
           return null;
@@ -78,7 +83,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return Routes.login;
       }
 
-      if (authState == AuthState.authenticated) {
+      if (authState.authenticated) {
         if (currentLocation == Routes.splash ||
             currentLocation == Routes.login ||
             currentLocation == Routes.register) {

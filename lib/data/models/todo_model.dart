@@ -28,8 +28,32 @@ class TodoModel {
       // API'den 1/0 veya true/false gelebilir, ikisini de kapsar:
       isCompleted: json['isCompleted'] == true || json['isCompleted'] == 1,
       isPublic: json['isPublic'] == true || json['isPublic'] == 1,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+    );
+  }
+
+  TodoModel copyWith({
+    int? id,
+    int? userId,
+    String? title,
+    String? description,
+    bool? isCompleted,
+    bool? isPublic,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return TodoModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      isCompleted: isCompleted ?? this.isCompleted,
+      isPublic: isPublic ?? this.isPublic,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 

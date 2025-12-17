@@ -1,4 +1,4 @@
-import { Routine } from '../models/routine.model.js';
+import Routine from '../models/Routine.js';
 
 export const createRoutine = async (req, res) => {
   try {

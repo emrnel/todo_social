@@ -1,23 +1,27 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/api/api_service.dart';
-import '../../../user/data/models/user_profile_model.dart';
-import '../../../user/data/repositories/user_repository.dart';
-import '../../../../data/models/user_model.dart';
+import 'package:todo_social/core/api/api_service.dart';
+import 'package:todo_social/features/user/data/models/user_profile_model.dart';
+import 'package:todo_social/features/user/data/repositories/user_repository.dart';
+import 'package:todo_social/data/models/user_model.dart';
 
 // State
 class SocialState {
   final List<UserModel> searchResults;
   final bool isSearchLoading;
+  final String? searchErrorMessage;
   final UserProfileModel? userProfile;
   final bool isProfileLoading;
+  final String? profileErrorMessage;
   final UserModel? currentUser;
   final bool isCurrentUserLoading;
 
   SocialState({
     this.searchResults = const [],
     this.isSearchLoading = false,
+    this.searchErrorMessage,
     this.userProfile,
     this.isProfileLoading = false,
+    this.profileErrorMessage,
     this.currentUser,
     this.isCurrentUserLoading = false,
   });
@@ -25,16 +29,20 @@ class SocialState {
   SocialState copyWith({
     List<UserModel>? searchResults,
     bool? isSearchLoading,
+    String? searchErrorMessage,
     UserProfileModel? userProfile,
     bool? isProfileLoading,
+    String? profileErrorMessage,
     UserModel? currentUser,
     bool? isCurrentUserLoading,
   }) {
     return SocialState(
       searchResults: searchResults ?? this.searchResults,
       isSearchLoading: isSearchLoading ?? this.isSearchLoading,
+      searchErrorMessage: searchErrorMessage ?? this.searchErrorMessage,
       userProfile: userProfile ?? this.userProfile,
       isProfileLoading: isProfileLoading ?? this.isProfileLoading,
+      profileErrorMessage: profileErrorMessage ?? this.profileErrorMessage,
       currentUser: currentUser ?? this.currentUser,
       isCurrentUserLoading: isCurrentUserLoading ?? this.isCurrentUserLoading,
     );
@@ -49,27 +57,30 @@ class SocialNotifier extends StateNotifier<SocialState> {
 
   Future<void> searchUsers(String query) async {
     if (query.isEmpty) {
-      state = state.copyWith(searchResults: [], isSearchLoading: false);
+      state = state.copyWith(
+          searchResults: [], isSearchLoading: false, searchErrorMessage: null);
       return;
     }
-    state = state.copyWith(isSearchLoading: true);
+    state = state.copyWith(isSearchLoading: true, searchErrorMessage: null);
     try {
       final users = await _userRepository.searchUsers(query);
       state = state.copyWith(searchResults: users, isSearchLoading: false);
     } catch (e) {
-      state = state.copyWith(isSearchLoading: false, searchResults: []);
-      // TODO: Handle error state in UI
+      state = state.copyWith(
+          isSearchLoading: false,
+          searchResults: [],
+          searchErrorMessage: e.toString());
     }
   }
 
   Future<void> fetchUserProfile(String username) async {
-    state = state.copyWith(isProfileLoading: true);
+    state = state.copyWith(isProfileLoading: true, profileErrorMessage: null);
     try {
       final profile = await _userRepository.getUserProfile(username);
       state = state.copyWith(userProfile: profile, isProfileLoading: false);
     } catch (e) {
-      state = state.copyWith(isProfileLoading: false);
-      // TODO: Handle error state in UI
+      state = state.copyWith(
+          isProfileLoading: false, profileErrorMessage: e.toString());
     }
   }
 
@@ -78,8 +89,8 @@ class SocialNotifier extends StateNotifier<SocialState> {
     if (originalProfile == null) return;
 
     final newStatus = !originalProfile.isFollowing;
-    final newFollowerCount = newStatus 
-        ? originalProfile.followerCount + 1 
+    final newFollowerCount = newStatus
+        ? originalProfile.followerCount + 1
         : originalProfile.followerCount - 1;
 
     // Optimistic update
@@ -110,7 +121,6 @@ class SocialNotifier extends StateNotifier<SocialState> {
       state = state.copyWith(currentUser: user, isCurrentUserLoading: false);
     } catch (e) {
       state = state.copyWith(isCurrentUserLoading: false);
-      // TODO: Handle error state in UI
     }
   }
 }
@@ -122,7 +132,8 @@ final userRepositoryProvider = Provider<UserRepository>((ref) {
 });
 
 // Provider for SocialNotifier
-final socialProvider = StateNotifierProvider<SocialNotifier, SocialState>((ref) {
+final socialProvider =
+    StateNotifierProvider<SocialNotifier, SocialState>((ref) {
   final userRepository = ref.watch(userRepositoryProvider);
   return SocialNotifier(userRepository);
 });
