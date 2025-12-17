@@ -68,7 +68,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 },
               )
             : widget.suffixIcon,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
       keyboardType: widget.keyboardType,
       obscureText: _obscureText,
