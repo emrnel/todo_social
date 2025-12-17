@@ -52,7 +52,7 @@ class RoutineProvider extends StateNotifier<RoutineState> {
     String? description,
     bool isPublic = false,
     required String recurrenceType,
-    String? recurrenceValue,
+    dynamic recurrenceValue,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -72,14 +72,51 @@ class RoutineProvider extends StateNotifier<RoutineState> {
     }
   }
 
+  Future<void> updateRoutine(
+    int routineId, {
+    String? title,
+    String? description,
+    bool? isPublic,
+    String? recurrenceType,
+    dynamic recurrenceValue,
+  }) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final updatedRoutine = await _repository.updateRoutine(
+        routineId,
+        title: title,
+        description: description,
+        isPublic: isPublic,
+        recurrenceType: recurrenceType,
+        recurrenceValue: recurrenceValue,
+      );
+
+      final updatedList = state.routines.map((r) {
+        return r.id == routineId ? updatedRoutine : r;
+      }).toList();
+
+      state = state.copyWith(routines: updatedList, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+    }
+  }
+
   Future<void> removeRoutine(int routineId) async {
+    final originalRoutines = state.routines;
+
+    // Optimistically remove
+    state = state.copyWith(
+      routines: originalRoutines.where((r) => r.id != routineId).toList(),
+    );
+
     try {
       await _repository.deleteRoutine(routineId);
-      final updatedList =
-          state.routines.where((r) => r.id != routineId).toList();
-      state = state.copyWith(routines: updatedList);
     } catch (e) {
-      state = state.copyWith(errorMessage: e.toString());
+      // Revert on error
+      state = state.copyWith(
+        routines: originalRoutines,
+        errorMessage: e.toString(),
+      );
     }
   }
 }

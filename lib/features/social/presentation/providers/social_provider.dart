@@ -84,33 +84,17 @@ class SocialNotifier extends StateNotifier<SocialState> {
     }
   }
 
-  Future<void> toggleFollow() async {
-    final originalProfile = state.userProfile;
-    if (originalProfile == null) return;
-
-    final newStatus = !originalProfile.isFollowing;
-    final newFollowerCount = newStatus
-        ? originalProfile.followerCount + 1
-        : originalProfile.followerCount - 1;
-
-    // Optimistic update
-    state = state.copyWith(
-      userProfile: originalProfile.copyWith(
-        isFollowing: newStatus,
-        followerCount: newFollowerCount,
-      ),
-    );
-
+  Future<void> toggleFollow(int userId, bool isFollowing) async {
     try {
-      if (newStatus) {
-        await _userRepository.followUser(originalProfile.user.id);
+      if (isFollowing) {
+        await _userRepository.unfollowUser(userId);
       } else {
-        await _userRepository.unfollowUser(originalProfile.user.id);
+        await _userRepository.followUser(userId);
       }
     } catch (e) {
       // Revert on failure
-      state = state.copyWith(userProfile: originalProfile);
-      // TODO: Show an error message to the user
+      // Re-throw the exception to be handled by the UI
+      rethrow;
     }
   }
 

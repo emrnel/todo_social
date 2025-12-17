@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Todo from '../models/Todo.js';
 import { Op } from 'sequelize';
 import Follow from '../models/Follow.js';
 
@@ -10,15 +11,12 @@ import Follow from '../models/Follow.js';
  */
 export const getMe = async (req, res) => {
   try {
-    // The authMiddleware has already run and attached the user's ID to req.user.
     const userId = req.user.id;
 
-    // Find the user by their primary key (ID), excluding the password hash.
     const user = await User.findByPk(userId, {
       attributes: { exclude: ['password_hash', 'updatedAt'] },
     });
 
-    // This case is unlikely if the token is valid, but it's a good safeguard.
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -27,12 +25,19 @@ export const getMe = async (req, res) => {
       });
     }
 
-    // Return the user data as per the API contract.
+    // Get follower and following counts
+    const followerCount = await user.countFollowers();
+    const followingCount = await user.countFollowing();
+
     return res.status(200).json({
       success: true,
-      message: 'Profil bilgileri başarıyla getirildi', // Added for consistency
+      message: 'Profil bilgileri başarıyla getirildi',
       data: {
-        user: user,
+        user: {
+          ...user.toJSON(),
+          followerCount,
+          followingCount,
+        },
       },
     });
   } catch (error) {
@@ -87,43 +92,69 @@ export const searchUsers = async (req, res) => {
 
 /**
  * @name   getUserProfile
- * @desc   Get a specific user's profile along with follower/following counts.
- * @route  GET /api/users/:userId
+ * @desc   Get a specific user's profile by username with public todos and follow status
+ * @route  GET /api/users/profile/:username
  * @access Private
  */
 export const getUserProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { username } = req.params;
+    const currentUserId = req.user.id;
 
-    const user = await User.findByPk(userId, {
-      attributes: ['id', 'username', 'createdAt'],
+    // Find user by username
+    const user = await User.findOne({
+      where: { username: username },
+      attributes: ['id', 'username', 'email', 'createdAt'],
     });
 
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'Kullanıcı bulunamadı',
+        error: { code: 'USER_NOT_FOUND' },
       });
     }
 
     // Get follower and following counts
-    // Use Sequelize's magic methods for consistency and robustness
     const followerCount = await user.countFollowers();
     const followingCount = await user.countFollowing();
 
+    // Get public todos for this user
+    const publicTodos = await Todo.findAll({
+      where: {
+        userId: user.id,
+        isPublic: true,
+      },
+      attributes: ['id', 'title', 'description', 'isCompleted', 'createdAt', 'updatedAt'],
+      order: [['createdAt', 'DESC']],
+      limit: 20, // Limit to last 20 public todos
+    });
+
+    // Check if current user is following this user
+    const currentUser = await User.findByPk(currentUserId);
+    const isFollowing = await currentUser.hasFollowing(user);
 
     return res.status(200).json({
       success: true,
       data: {
         user: {
-          ...user.toJSON(),
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          createdAt: user.createdAt,
           followerCount,
           followingCount,
         },
+        publicTodos: publicTodos.map(todo => todo.toJSON()),
+        isFollowing,
       },
     });
   } catch (error) {
     console.error('Get User Profile Error:', error);
-    return res.status(500).json({ success: false, message: 'Sunucu hatası: ' + error.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message,
+      error: { code: 'INTERNAL_SERVER_ERROR' },
+    });
   }
 };

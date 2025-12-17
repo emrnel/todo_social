@@ -8,13 +8,11 @@ class FeedRepository {
 
   Future<List<FeedItemModel>> getFeed() async {
     try {
-      final response = await _dio.get('/feed');
+      final response = await _dio.get('/social/feed');
       final List<dynamic> feedList = response.data['data']['feed'];
       return feedList.map((json) => FeedItemModel.fromJson(json)).toList();
-    } on DioException catch (_) {
-      // TODO: Proper error handling
-      // print('Error fetching feed: $e');
-      rethrow;
+    } on DioException catch (e) {
+      throw Exception('Feed getirme hatası: ${e.message}');
     }
   }
 }
