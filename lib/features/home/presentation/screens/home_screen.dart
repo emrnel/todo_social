@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         key: _fabKey,
-        onPressed: () {
+        onPressed: () async {
           // Calculate position to show menu near the FAB
           final RenderBox button = _fabKey.currentContext!.findRenderObject() as RenderBox;
           final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
@@ -42,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Offset.zero & overlay.size,
           );
 
-          showMenu(
+          final value = await showMenu(
             context: context,
             position: position,
             items: [
@@ -67,13 +67,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
-          ).then((value) {
-            if (value == 'todo') {
-              context.push('/add-todo');
-            } else if (value == 'routine') {
-              context.push('/add-routine');
-            }
-          });
+          );
+          
+          if (!mounted) return;
+          if (value == 'todo') {
+            context.push('/add-todo');
+          } else if (value == 'routine') {
+            context.push('/add-routine');
+          }
         },
         child: const Icon(Icons.add),
       ),

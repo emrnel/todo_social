@@ -12,9 +12,9 @@ class TodoRepository {
       final response = await _dio.get('/todos/mytodos');
       final List<dynamic> todoList = response.data['data']['todos'];
       return todoList.map((json) => TodoModel.fromJson(json)).toList();
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       // TODO: Proper error handling
-      print('Error fetching todos: $e');
+      // print('Error fetching todos: $e');
       rethrow;
     }
   }
@@ -30,9 +30,9 @@ class TodoRepository {
         },
       );
       return TodoModel.fromJson(response.data['data']['todo']);
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       // TODO: Proper error handling
-      print('Error adding todo: $e');
+      // print('Error adding todo: $e');
       rethrow;
     }
   }
@@ -44,9 +44,9 @@ class TodoRepository {
         data: {'isCompleted': isCompleted},
       );
       return TodoModel.fromJson(response.data['data']['todo']);
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       // TODO: Proper error handling
-      print('Error updating todo status: $e');
+      // print('Error updating todo status: $e');
       rethrow;
     }
   }
@@ -54,9 +54,9 @@ class TodoRepository {
   Future<void> deleteTodo(int todoId) async {
     try {
       await _dio.delete('/todos/$todoId');
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       // TODO: Proper error handling
-      print('Error deleting todo: $e');
+      // print('Error deleting todo: $e');
       rethrow;
     }
   }
