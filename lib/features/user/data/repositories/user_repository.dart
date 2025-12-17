@@ -21,10 +21,8 @@ class UserRepository {
       );
       final List<dynamic> userList = response.data['data']['users'];
       return userList.map((json) => UserModel.fromJson(json)).toList();
-    } on DioException catch (_) {
-      // TODO: Proper error handling
-      // print('Error searching users: $e');
-      rethrow;
+    } on DioException catch (e) {
+      throw Exception('Kullanıcı arama hatası: ${e.message}');
     }
   }
 
@@ -32,10 +30,8 @@ class UserRepository {
     try {
       final response = await _dio.get('/users/profile/$username');
       return UserProfileModel.fromJson(response.data['data']);
-    } on DioException catch (_) {
-      // TODO: Proper error handling
-      // print('Error getting user profile: $e');
-      rethrow;
+    } on DioException catch (e) {
+      throw Exception('Profil getirme hatası: ${e.message}');
     }
   }
 
@@ -43,30 +39,24 @@ class UserRepository {
     try {
       final response = await _dio.get('/users/me');
       return UserModel.fromJson(response.data['data']['user']);
-    } on DioException catch (_) {
-      // TODO: Proper error handling
-      // print('Error getting my profile: $e');
-      rethrow;
+    } on DioException catch (e) {
+      throw Exception('Profil getirme hatası: ${e.message}');
     }
   }
 
   Future<void> followUser(int userId) async {
     try {
-      await _dio.post('/users/follow/$userId');
-    } on DioException catch (_) {
-      // TODO: Proper error handling
-      // print('Error following user: $e');
-      rethrow;
+      await _dio.post('/social/follow/$userId');
+    } on DioException catch (e) {
+      throw Exception('Takip etme hatası: ${e.message}');
     }
   }
 
   Future<void> unfollowUser(int userId) async {
     try {
-      await _dio.delete('/users/unfollow/$userId');
-    } on DioException catch (_) {
-      // TODO: Proper error handling
-      // print('Error unfollowing user: $e');
-      rethrow;
+      await _dio.delete('/social/unfollow/$userId');
+    } on DioException catch (e) {
+      throw Exception('Takipten çıkma hatası: ${e.message}');
     }
   }
 }

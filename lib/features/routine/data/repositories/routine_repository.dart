@@ -11,8 +11,8 @@ class RoutineRepository {
       final response = await _dio.get('/routines/myroutines');
       final List<dynamic> routineList = response.data['data']['routines'] ?? [];
       return routineList.map((json) => RoutineModel.fromJson(json)).toList();
-    } on DioException catch (_) {
-      rethrow;
+    } on DioException catch (e) {
+      throw Exception('Rutinleri getirme hatası: ${e.message}');
     }
   }
 
@@ -21,7 +21,7 @@ class RoutineRepository {
     String? description,
     bool isPublic = false,
     required String recurrenceType,
-    String? recurrenceValue,
+    dynamic recurrenceValue,
   }) async {
     try {
       final response = await _dio.post(
@@ -35,16 +35,39 @@ class RoutineRepository {
         },
       );
       return RoutineModel.fromJson(response.data['data']['routine']);
-    } on DioException catch (_) {
-      rethrow;
+    } on DioException catch (e) {
+      throw Exception('Rutin ekleme hatası: ${e.message}');
+    }
+  }
+
+  Future<RoutineModel> updateRoutine(
+    int routineId, {
+    String? title,
+    String? description,
+    bool? isPublic,
+    String? recurrenceType,
+    dynamic recurrenceValue,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (title != null) data['title'] = title;
+      if (description != null) data['description'] = description;
+      if (isPublic != null) data['isPublic'] = isPublic;
+      if (recurrenceType != null) data['recurrenceType'] = recurrenceType;
+      if (recurrenceValue != null) data['recurrenceValue'] = recurrenceValue;
+
+      final response = await _dio.patch('/routines/$routineId', data: data);
+      return RoutineModel.fromJson(response.data['data']['routine']);
+    } on DioException catch (e) {
+      throw Exception('Rutin güncelleme hatası: ${e.message}');
     }
   }
 
   Future<void> deleteRoutine(int routineId) async {
     try {
       await _dio.delete('/routines/$routineId');
-    } on DioException catch (_) {
-      rethrow;
+    } on DioException catch (e) {
+      throw Exception('Rutin silme hatası: ${e.message}');
     }
   }
 }
