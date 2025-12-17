@@ -8,7 +8,7 @@ class FeedRepository {
 
   Future<List<FeedItemModel>> getFeed() async {
     try {
-      final response = await _dio.get('/feed');
+      final response = await _dio.get('/social/feed');
       final List<dynamic> feedList = response.data['data']['feed'];
       return feedList.map((json) => FeedItemModel.fromJson(json)).toList();
     } on DioException catch (_) {

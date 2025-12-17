@@ -52,7 +52,7 @@ class UserRepository {
 
   Future<void> followUser(int userId) async {
     try {
-      await _dio.post('/users/follow/$userId');
+      await _dio.post('/social/follow/$userId');
     } on DioException catch (_) {
       // TODO: Proper error handling
       // print('Error following user: $e');
@@ -62,7 +62,7 @@ class UserRepository {
 
   Future<void> unfollowUser(int userId) async {
     try {
-      await _dio.delete('/users/unfollow/$userId');
+      await _dio.delete('/social/unfollow/$userId');
     } on DioException catch (_) {
       // TODO: Proper error handling
       // print('Error unfollowing user: $e');
