@@ -18,18 +18,14 @@ class UserProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // If username is null, this is "My Profile" - redirect or show current user's profile
-    final usernameToFetch =
-        username ?? 'me'; // 'me' için özel handling gerekebilir
-
+    // If username is null, show current user's profile
     if (username == null) {
-      // "My Profile" için farklı bir provider kullanabilirsiniz
       return Scaffold(
-        appBar: AppBar(title: const Text('Profilim')),
-        body: const Center(child: Text('My Profile - Not implemented yet')),
+        body: _MyProfileContent(),
       );
     }
 
+    final usernameToFetch = username!;
     final profileAsync = ref.watch(userProfileProvider(usernameToFetch));
 
     return Scaffold(
@@ -41,8 +37,8 @@ class UserProfileScreen extends ConsumerWidget {
           final user = profileData.user;
           final publicTodos = profileData.publicTodos;
           final isFollowing = profileData.isFollowing;
-          final followerCount = user.followerCount ?? 0;
-          final followingCount = user.followingCount ?? 0;
+          final followerCount = profileData.followerCount;
+          final followingCount = profileData.followingCount;
 
           return SingleChildScrollView(
             child: Column(
@@ -101,10 +97,30 @@ class UserProfileScreen extends ConsumerWidget {
                           _buildStatItem('Takip', followingCount),
                           const Spacer(),
                           ElevatedButton(
-                            onPressed: () {
-                              ref
-                                  .read(socialProvider.notifier)
-                                  .toggleFollow(user.id, isFollowing);
+                            onPressed: () async {
+                              // Get repository directly
+                              final dio = ref.read(apiServiceProvider);
+                              final repository = UserRepository(dio);
+
+                              try {
+                                if (isFollowing) {
+                                  await repository.unfollowUser(user.id);
+                                } else {
+                                  await repository.followUser(user.id);
+                                }
+                                // Refresh the profile to update UI
+                                ref.refresh(
+                                    userProfileProvider(usernameToFetch));
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Hata: ${e.toString()}'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
@@ -258,5 +274,38 @@ class UserProfileScreen extends ConsumerWidget {
     } else {
       return 'Şimdi';
     }
+  }
+}
+
+// My Profile Content Widget
+class _MyProfileContent extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.person, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text(
+            'Kendi profiliniz',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Profil detayları yakında eklenecek',
+            style: TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              // TODO: Implement edit profile functionality
+            },
+            icon: const Icon(Icons.edit),
+            label: const Text('Profili Düzenle'),
+          ),
+        ],
+      ),
+    );
   }
 }
