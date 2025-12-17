@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:todo_social/features/social/presentation/providers/social_provider.dart';
+import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 import 'package:todo_social/core/api/api_service.dart';
 import 'package:todo_social/features/user/data/repositories/user_repository.dart';
+import 'package:todo_social/core/navigation/routes.dart';
 
 final userProfileProvider =
     FutureProvider.family<dynamic, String>((ref, username) async {
   final dio = ref.watch(apiServiceProvider);
   final repository = UserRepository(dio);
   return await repository.getUserProfile(username);
+});
+
+final myProfileProvider = FutureProvider<dynamic>((ref) async {
+  final dio = ref.watch(apiServiceProvider);
+  final repository = UserRepository(dio);
+  return await repository.getMyProfile();
 });
 
 class UserProfileScreen extends ConsumerWidget {
@@ -20,9 +29,7 @@ class UserProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // If username is null, show current user's profile
     if (username == null) {
-      return Scaffold(
-        body: _MyProfileContent(),
-      );
+      return const _MyProfileScreen();
     }
 
     final usernameToFetch = username!;
@@ -78,7 +85,7 @@ class UserProfileScreen extends ConsumerWidget {
                                   ),
                                 ),
                                 Text(
-                                  user.email,
+                                  user.email ?? '',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.grey.shade600,
@@ -98,7 +105,6 @@ class UserProfileScreen extends ConsumerWidget {
                           const Spacer(),
                           ElevatedButton(
                             onPressed: () async {
-                              // Get repository directly
                               final dio = ref.read(apiServiceProvider);
                               final repository = UserRepository(dio);
 
@@ -108,7 +114,6 @@ class UserProfileScreen extends ConsumerWidget {
                                 } else {
                                   await repository.followUser(user.id);
                                 }
-                                // Refresh the profile to update UI
                                 ref.refresh(
                                     userProfileProvider(usernameToFetch));
                               } catch (e) {
@@ -277,34 +282,120 @@ class UserProfileScreen extends ConsumerWidget {
   }
 }
 
-// My Profile Content Widget
-class _MyProfileContent extends ConsumerWidget {
+// My Profile Screen
+class _MyProfileScreen extends ConsumerWidget {
+  const _MyProfileScreen();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.person, size: 64, color: Colors.grey),
-          const SizedBox(height: 16),
-          const Text(
-            'Kendi profiliniz',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    final profileAsync = ref.watch(myProfileProvider);
+    final authState = ref.watch(authProvider);
+
+    return Scaffold(
+      body: profileAsync.when(
+        data: (user) {
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                // Profile Header
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  color: Colors.teal.shade50,
+                  width: double.infinity,
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.teal,
+                        child: Text(
+                          user.username[0].toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 40,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '@${user.username}',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        user.email ?? '',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Logout Button
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Çıkış Yap'),
+                          content: const Text(
+                              'Çıkış yapmak istediğinizden emin misiniz?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('İptal'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Çıkış Yap'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirmed == true && context.mounted) {
+                        await ref.read(authProvider.notifier).logoutUser();
+                        if (context.mounted) {
+                          context.go(Routes.login);
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.logout),
+                    label: const Text('Çıkış Yap'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Hata: $error'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.refresh(myProfileProvider),
+                child: const Text('Tekrar Dene'),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Profil detayları yakında eklenecek',
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              // TODO: Implement edit profile functionality
-            },
-            icon: const Icon(Icons.edit),
-            label: const Text('Profili Düzenle'),
-          ),
-        ],
+        ),
       ),
     );
   }

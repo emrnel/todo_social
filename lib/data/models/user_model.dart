@@ -1,14 +1,14 @@
 class UserModel {
   final int id;
   final String username;
-  final String email;
+  final String? email; // Nullable yapıldı
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
   UserModel({
     required this.id,
     required this.username,
-    required this.email,
+    this.email, // Nullable
     this.createdAt,
     this.updatedAt,
   });
@@ -17,7 +17,7 @@ class UserModel {
     return UserModel(
       id: json['id'],
       username: json['username'],
-      email: json['email'],
+      email: json['email'], // null olabilir
       createdAt:
           json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt:
