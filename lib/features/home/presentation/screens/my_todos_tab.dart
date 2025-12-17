@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_social/data/models/todo_model.dart';
 import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
 import 'package:todo_social/data/models/routine_model.dart';
-import 'package:todo_social/features/routine/presentation/providers/routine_provider.dart';
 
 class MyTodosTab extends ConsumerStatefulWidget {
   const MyTodosTab({super.key});
@@ -20,9 +19,9 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
     super.didChangeDependencies();
     if (!_loaded) {
       _loaded = true;
+      // Only fetch todos - backend returns both todos and routines
       Future.microtask(() async {
         await ref.read(todoProvider.notifier).fetchMyTodos();
-        await ref.read(routineProvider.notifier).fetchMyRoutines();
       });
     }
   }
@@ -30,27 +29,21 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
   @override
   Widget build(BuildContext context) {
     final todoState = ref.watch(todoProvider);
-    final routineState = ref.watch(routineProvider);
     final List<TodoModel> todos = todoState.todos;
-    final List<RoutineModel> routines = routineState.routines;
+    final List<RoutineModel> routines = todoState.routines;
 
-    if ((todoState.isLoading || routineState.isLoading) &&
-        todos.isEmpty &&
-        routines.isEmpty) {
+    if (todoState.isLoading && todos.isEmpty && routines.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if ((todoState.errorMessage != null || routineState.errorMessage != null) &&
-        todos.isEmpty &&
-        routines.isEmpty) {
-      return Center(
-          child: Text(
-              'Error: ${todoState.errorMessage ?? routineState.errorMessage}'));
+    if (todoState.errorMessage != null && todos.isEmpty && routines.isEmpty) {
+      return Center(child: Text('Error: ${todoState.errorMessage}'));
     }
 
     if (todos.isEmpty && routines.isEmpty) {
       return const Center(child: Text('No todos or routines yet.'));
     }
+
     final items = [
       ...todos.map((t) => {'kind': 'todo', 'todo': t}),
       ...routines.map((r) => {'kind': 'routine', 'routine': r}),

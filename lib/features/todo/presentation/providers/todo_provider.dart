@@ -1,23 +1,32 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_social/features/todo/data/repositories/todo_repository.dart';
 import 'package:todo_social/data/models/todo_model.dart';
+import 'package:todo_social/data/models/routine_model.dart';
 import 'package:todo_social/core/api/api_service.dart';
 
 // 1. Define the State class
 class TodoState {
   final List<TodoModel> todos;
+  final List<RoutineModel> routines;
   final bool isLoading;
   final String? errorMessage;
 
-  TodoState({this.todos = const [], this.isLoading = false, this.errorMessage});
+  TodoState({
+    this.todos = const [],
+    this.routines = const [],
+    this.isLoading = false,
+    this.errorMessage,
+  });
 
   TodoState copyWith({
     List<TodoModel>? todos,
+    List<RoutineModel>? routines,
     bool? isLoading,
     String? errorMessage,
   }) {
     return TodoState(
       todos: todos ?? this.todos,
+      routines: routines ?? this.routines,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage ?? this.errorMessage,
     );
@@ -33,8 +42,12 @@ class TodoNotifier extends StateNotifier<TodoState> {
   Future<void> fetchMyTodos() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final todos = await _repository.getMyTodos();
-      state = state.copyWith(todos: todos, isLoading: false);
+      final result = await _repository.getMyTodosAndRoutines();
+      state = state.copyWith(
+        todos: result['todos'] as List<TodoModel>,
+        routines: result['routines'] as List<RoutineModel>,
+        isLoading: false,
+      );
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
