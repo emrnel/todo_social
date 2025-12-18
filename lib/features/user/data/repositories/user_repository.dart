@@ -9,7 +9,6 @@ class UserRepository {
   UserRepository(this._dio);
 
   Future<List<UserModel>> searchUsers(String query) async {
-    // API contract specifies a minimum of 2 characters for search
     if (query.length < 2) {
       return [];
     }
@@ -35,13 +34,33 @@ class UserRepository {
     }
   }
 
-  Future<UserModel> getMyProfile() async {
+  Future<Map<String, dynamic>> getMyProfile() async {
     try {
       final response = await _dio.get('/users/me');
-      return UserModel.fromJson(response.data['data']['user']);
+      final data = response.data['data'];
+
+      // Parse with follower counts
+      return {
+        'user': UserModel.fromJson(data['user']),
+        'followerCount': _parseCount(data['followerCount']),
+        'followingCount': _parseCount(data['followingCount']),
+      };
     } on DioException catch (e) {
       throw Exception('Profil getirme hatası: ${e.message}');
     }
+  }
+
+  int _parseCount(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) {
+      try {
+        return int.parse(value);
+      } catch (e) {
+        return 0;
+      }
+    }
+    return 0;
   }
 
   Future<List<UserModel>> getFollowingUsers() async {
