@@ -37,7 +37,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         try {
           final dio = ref.read(apiServiceProvider);
           final userRepository = UserRepository(dio);
-          final currentUser = await userRepository.getMyProfile();
+          final profileData = await userRepository.getMyProfile();
+
+          // Extract user from the map
+          final currentUser = profileData['user'];
 
           if (!mounted) return;
 

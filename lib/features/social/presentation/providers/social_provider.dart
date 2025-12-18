@@ -14,7 +14,7 @@ class SocialState {
   final String? profileErrorMessage;
   final UserModel? currentUser;
   final bool isCurrentUserLoading;
-  final List<int> followingUserIds; // NEW: Track following user IDs
+  final List<int> followingUserIds;
 
   SocialState({
     this.searchResults = const [],
@@ -25,7 +25,7 @@ class SocialState {
     this.profileErrorMessage,
     this.currentUser,
     this.isCurrentUserLoading = false,
-    this.followingUserIds = const [], // NEW
+    this.followingUserIds = const [],
   });
 
   SocialState copyWith({
@@ -37,7 +37,7 @@ class SocialState {
     String? profileErrorMessage,
     UserModel? currentUser,
     bool? isCurrentUserLoading,
-    List<int>? followingUserIds, // NEW
+    List<int>? followingUserIds,
   }) {
     return SocialState(
       searchResults: searchResults ?? this.searchResults,
@@ -48,7 +48,7 @@ class SocialState {
       profileErrorMessage: profileErrorMessage ?? this.profileErrorMessage,
       currentUser: currentUser ?? this.currentUser,
       isCurrentUserLoading: isCurrentUserLoading ?? this.isCurrentUserLoading,
-      followingUserIds: followingUserIds ?? this.followingUserIds, // NEW
+      followingUserIds: followingUserIds ?? this.followingUserIds,
     );
   }
 }
@@ -88,58 +88,19 @@ class SocialNotifier extends StateNotifier<SocialState> {
     }
   }
 
-  Future<void> toggleFollow() async {
-    final originalProfile = state.userProfile;
-    if (originalProfile == null) return;
-
-    final newStatus = !originalProfile.isFollowing;
-    final newFollowerCount = newStatus
-        ? originalProfile.followerCount + 1
-        : originalProfile.followerCount - 1;
-
-    // Optimistic update
-    state = state.copyWith(
-      userProfile: originalProfile.copyWith(
-        isFollowing: newStatus,
-        followerCount: newFollowerCount,
-      ),
-    );
-
-    // Update following list
-    List<int> newFollowingIds = List.from(state.followingUserIds);
-    if (newStatus) {
-      newFollowingIds.add(originalProfile.user.id);
-    } else {
-      newFollowingIds.remove(originalProfile.user.id);
-    }
-    state = state.copyWith(followingUserIds: newFollowingIds);
-
-    try {
-      if (newStatus) {
-        await _userRepository.followUser(originalProfile.user.id);
-      } else {
-        await _userRepository.unfollowUser(originalProfile.user.id);
-      }
-    } catch (e) {
-      // Revert on failure
-      state = state.copyWith(
-        userProfile: originalProfile,
-        followingUserIds: state.followingUserIds,
-      );
-    }
-  }
-
   Future<void> fetchMyProfile() async {
     state = state.copyWith(isCurrentUserLoading: true);
     try {
-      final user = await _userRepository.getMyProfile();
+      final profileData = await _userRepository.getMyProfile();
+      // Extract user from the map
+      final user = profileData['user'] as UserModel;
       state = state.copyWith(currentUser: user, isCurrentUserLoading: false);
     } catch (e) {
       state = state.copyWith(isCurrentUserLoading: false);
     }
   }
 
-  // NEW: Fetch following users
+  // Fetch following users
   Future<void> fetchFollowingUsers() async {
     try {
       final following = await _userRepository.getFollowingUsers();

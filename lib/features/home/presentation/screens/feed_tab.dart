@@ -24,9 +24,9 @@ class _FeedTabState extends ConsumerState<FeedTab> {
     super.didChangeDependencies();
     if (!_loaded) {
       _loaded = true;
-      Future.microtask(() {
-        ref.read(feedProvider.notifier).fetchFeed();
-        ref.read(socialProvider.notifier).fetchFollowingUsers();
+      Future.microtask(() async {
+        await ref.read(feedProvider.notifier).fetchFeed();
+        await ref.read(socialProvider.notifier).fetchFollowingUsers();
       });
     }
   }

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:todo_social/data/models/user_model.dart';
 import 'package:todo_social/features/social/presentation/providers/social_provider.dart';
 import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 import 'package:todo_social/core/api/api_service.dart';
 import 'package:todo_social/features/user/data/repositories/user_repository.dart';
 import 'package:todo_social/core/navigation/routes.dart';
+import 'package:todo_social/features/feed/presentation/providers/feed_provider.dart';
 
 final userProfileProvider =
     FutureProvider.family<dynamic, String>((ref, username) async {
@@ -33,7 +35,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Invalidate the provider when screen initializes to ensure fresh data
+    // Invalidate on init for fresh data
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.username != null) {
         ref.invalidate(userProfileProvider(widget.username!));
@@ -132,9 +134,18 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                                 } else {
                                   await repository.followUser(user.id);
                                 }
+
                                 // Refresh profile data
                                 ref.invalidate(
                                     userProfileProvider(usernameToFetch));
+
+                                // Refresh following list
+                                await ref
+                                    .read(socialProvider.notifier)
+                                    .fetchFollowingUsers();
+
+                                // Refresh feed
+                                ref.read(feedProvider.notifier).fetchFeed();
                               } catch (e) {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -301,18 +312,22 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 }
 
-// My Profile Screen
+// My Profile Screen - ENHANCED VERSION
 class _MyProfileScreen extends ConsumerWidget {
   const _MyProfileScreen();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(myProfileProvider);
-    final authState = ref.watch(authProvider);
 
     return Scaffold(
       body: profileAsync.when(
-        data: (user) {
+        data: (data) {
+          // data is Map<String, dynamic>
+          final user = data['user'] as UserModel;
+          final followerCount = data['followerCount'] as int? ?? 0;
+          final followingCount = data['followingCount'] as int? ?? 0;
+
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -349,6 +364,17 @@ class _MyProfileScreen extends ConsumerWidget {
                           fontSize: 16,
                           color: Colors.grey.shade600,
                         ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Stats Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildStatColumn('Takipçi', followerCount),
+                          const SizedBox(width: 40),
+                          _buildStatColumn('Takip', followingCount),
+                        ],
                       ),
                     ],
                   ),
@@ -416,6 +442,27 @@ class _MyProfileScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStatColumn(String label, int count) {
+    return Column(
+      children: [
+        Text(
+          '$count',
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      ],
     );
   }
 }
