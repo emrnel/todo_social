@@ -31,10 +31,11 @@ class AuthState {
     String? errorMessage,
     UserModel? currentUser,
     bool? initialized,
+    bool clearError = false,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       currentUser: currentUser ?? this.currentUser,
       initialized: initialized ?? this.initialized,
     );
@@ -52,7 +53,8 @@ class AuthProvider extends StateNotifier<AuthState> {
   /// Logs in the user using repository and saves token on success.
   Future<void> loginUser(
       {required String email, required String password}) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state =
+        state.copyWith(isLoading: true, errorMessage: null, clearError: true);
     try {
       final resp = await authRepository.login(email: email, password: password);
 
@@ -64,6 +66,7 @@ class AuthProvider extends StateNotifier<AuthState> {
           currentUser: resp.user,
           errorMessage: null,
           initialized: true,
+          clearError: true,
         );
       } else {
         state = state.copyWith(
@@ -82,7 +85,8 @@ class AuthProvider extends StateNotifier<AuthState> {
       {required String username,
       required String email,
       required String password}) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state =
+        state.copyWith(isLoading: true, errorMessage: null, clearError: true);
     try {
       final resp = await authRepository.register(
           username: username, email: email, password: password);
@@ -94,6 +98,7 @@ class AuthProvider extends StateNotifier<AuthState> {
           currentUser: resp.user,
           errorMessage: null,
           initialized: true,
+          clearError: true,
         );
       } else {
         state = state.copyWith(
@@ -113,9 +118,19 @@ class AuthProvider extends StateNotifier<AuthState> {
     state = AuthState(initialized: true);
   }
 
-  /// Marks user as authenticated (used for splash screen after token verification).
+  /// Marks user as authenticated with user data (used for splash screen after token verification).
+  void setAuthenticatedWithUser(UserModel user) {
+    state = state.copyWith(
+      currentUser: user,
+      isLoading: false,
+      initialized: true,
+      clearError: true,
+    );
+  }
+
+  /// Marks user as authenticated (deprecated - use setAuthenticatedWithUser instead).
+  @Deprecated('Use setAuthenticatedWithUser instead')
   void setAuthenticated() {
-    // Fetch stored user info if available
     state = state.copyWith(
       currentUser: state.currentUser,
       isLoading: false,

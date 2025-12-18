@@ -15,10 +15,11 @@ class PublicTodoModel {
 
   factory PublicTodoModel.fromJson(Map<String, dynamic> json) {
     return PublicTodoModel(
-      id: json['id'],
-      title: json['title'],
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      title: json['title'] ?? '',
       description: json['description'],
-      isCompleted: json['isCompleted'],
+      // Handle both boolean and int (0/1) from backend
+      isCompleted: json['isCompleted'] == true || json['isCompleted'] == 1,
       createdAt: DateTime.parse(json['createdAt']),
     );
   }

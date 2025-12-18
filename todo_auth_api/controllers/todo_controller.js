@@ -9,7 +9,7 @@ import { validationResult } from 'express-validator';
  */
 const shouldShowRoutineToday = (routine) => {
   const today = new Date();
-  const dayOfWeek = today.toLocaleLowerCase('en-US', { weekday: 'short' }); // 'mon', 'tue', etc.
+  const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase(); // 'mon', 'tue', etc.
 
   if (routine.recurrenceType === 'daily') {
     return true;
@@ -18,7 +18,7 @@ const shouldShowRoutineToday = (routine) => {
   if (routine.recurrenceType === 'weekly' && routine.recurrenceValue) {
     try {
       const days = JSON.parse(routine.recurrenceValue);
-      return Array.isArray(days) && days.includes(dayOfWeek.toLowerCase());
+      return Array.isArray(days) && days.includes(dayOfWeek);
     } catch (e) {
       console.error('Error parsing recurrenceValue:', e);
       return false;
@@ -30,7 +30,7 @@ const shouldShowRoutineToday = (routine) => {
 
 /**
  * @name   getMyTodos
- * @desc   Get all todos and today's routines as a unified tasks array
+ * @desc   Get all todos and routines for the logged-in user
  * @route  GET /api/todos/mytodos
  * @access Private (requires JWT)
  */
@@ -50,31 +50,12 @@ export const getMyTodos = async (req, res) => {
       }),
     ]);
 
-    // Filter routines to only today's routines
-    const todaysRoutines = routines.filter(routine => shouldShowRoutineToday(routine));
-
-    // Create unified tasks array with type field
-    const tasks = [
-      ...todos.map(todo => ({
-        ...todo.toJSON(),
-        type: 'todo',
-      })),
-      ...todaysRoutines.map(routine => ({
-        ...routine.toJSON(),
-        type: 'routine',
-        isCompleted: null, // Routines don't have completion status
-      })),
-    ];
-
-    // Sort by createdAt descending
-    tasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
+    // Return separate arrays for todos and routines
+    // Frontend will handle filtering routines based on today
     return res.status(200).json({
       success: true,
       message: 'Kullanıcının yapılacaklar listesi başarıyla getirildi',
       data: {
-        tasks,
-        // Also include separate arrays for backward compatibility (optional)
         todos: todos.map(t => t.toJSON()),
         routines: routines.map(r => r.toJSON()),
       },
