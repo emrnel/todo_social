@@ -25,9 +25,9 @@ export const getMe = async (req, res) => {
       });
     }
 
-    // Get follower and following counts
-    const followerCount = await user.countFollowers();
-    const followingCount = await user.countFollowing();
+    // Get follower and following counts as integers
+    const followerCount = parseInt(await user.countFollowers(), 10) || 0;
+    const followingCount = parseInt(await user.countFollowing(), 10) || 0;
 
     return res.status(200).json({
       success: true,
@@ -115,9 +115,9 @@ export const getUserProfile = async (req, res) => {
       });
     }
 
-    // Get follower and following counts
-    const followerCount = await user.countFollowers();
-    const followingCount = await user.countFollowing();
+    // Get follower and following counts as integers
+    const followerCount = parseInt(await user.countFollowers(), 10) || 0;
+    const followingCount = parseInt(await user.countFollowing(), 10) || 0;
 
     // Get public todos for this user
     const publicTodos = await Todo.findAll({
@@ -127,7 +127,7 @@ export const getUserProfile = async (req, res) => {
       },
       attributes: ['id', 'title', 'description', 'isCompleted', 'createdAt', 'updatedAt'],
       order: [['createdAt', 'DESC']],
-      limit: 20, // Limit to last 20 public todos
+      limit: 20,
     });
 
     // Check if current user is following this user
@@ -142,9 +142,9 @@ export const getUserProfile = async (req, res) => {
           username: user.username,
           email: user.email,
           createdAt: user.createdAt,
-          followerCount,
-          followingCount,
         },
+        followerCount,
+        followingCount,
         publicTodos: publicTodos.map(todo => todo.toJSON()),
         isFollowing,
       },
