@@ -15,7 +15,7 @@ class FeedTab extends ConsumerStatefulWidget {
 
 class _FeedTabState extends ConsumerState<FeedTab> {
   bool _loaded = false;
-  FeedFilter _currentFilter = FeedFilter.following;
+  FeedFilter _currentFilter = FeedFilter.discover; // Default to discover
 
   @override
   void didChangeDependencies() {
@@ -88,9 +88,7 @@ class _FeedTabState extends ConsumerState<FeedTab> {
       );
     }
 
-    // Filter items based on current filter
-    // Not: Şu anda backend tüm public task'leri döndürüyor
-    // Gerçek implementasyonda backend'e filter parametresi gönderilebilir
+    // Filter is handled in backend now - all public items are returned
     final filteredItems = state.feedItems;
 
     if (filteredItems.isEmpty) {
@@ -105,11 +103,14 @@ class _FeedTabState extends ConsumerState<FeedTab> {
         itemCount: filteredItems.length,
         itemBuilder: (context, index) {
           final item = filteredItems[index];
+          final isTodo = item.type == 'todo';
+
           return Card(
             elevation: 2,
+            color: isTodo ? null : Colors.green.shade50,
             child: InkWell(
               onTap: () {
-                // Kullanıcı profiline git
+                // Navigate to user profile
                 context.push(Routes.userProfilePath(item.username));
               },
               child: Padding(
@@ -121,7 +122,7 @@ class _FeedTabState extends ConsumerState<FeedTab> {
                     Row(
                       children: [
                         CircleAvatar(
-                          backgroundColor: Colors.teal,
+                          backgroundColor: isTodo ? Colors.teal : Colors.green,
                           child: Text(
                             item.username[0].toUpperCase(),
                             style: const TextStyle(
@@ -135,12 +136,30 @@ class _FeedTabState extends ConsumerState<FeedTab> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                '@${item.username}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    '@${item.username}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    isTodo ? Icons.check_box : Icons.repeat,
+                                    size: 16,
+                                    color: isTodo ? Colors.blue : Colors.green,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    isTodo ? 'Todo' : 'Routine',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
                               ),
                               Text(
                                 _formatDate(item.createdAt),
@@ -152,23 +171,25 @@ class _FeedTabState extends ConsumerState<FeedTab> {
                             ],
                           ),
                         ),
-                        Icon(
-                          item.isCompleted
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
-                          color: item.isCompleted ? Colors.green : Colors.grey,
-                          size: 28,
-                        ),
+                        if (isTodo && item.isCompleted != null)
+                          Icon(
+                            item.isCompleted!
+                                ? Icons.check_circle
+                                : Icons.radio_button_unchecked,
+                            color:
+                                item.isCompleted! ? Colors.green : Colors.grey,
+                            size: 28,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    // Todo content
+                    // Content
                     Text(
                       item.title,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        decoration: item.isCompleted
+                        decoration: (isTodo && item.isCompleted == true)
                             ? TextDecoration.lineThrough
                             : null,
                       ),
@@ -183,6 +204,28 @@ class _FeedTabState extends ConsumerState<FeedTab> {
                             fontSize: 14,
                             color: Colors.grey.shade700,
                           ),
+                        ),
+                      ),
+                    // Show recurrence info for routines
+                    if (!isTodo && item.recurrenceType != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.repeat,
+                              size: 16,
+                              color: Colors.grey.shade600,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Tekrar: ${item.recurrenceType}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                   ],
@@ -223,7 +266,7 @@ class _FeedTabState extends ConsumerState<FeedTab> {
             Text(
               _currentFilter == FeedFilter.following
                   ? 'Kullanıcıları takip etmeye başlayın'
-                  : 'Kullanıcılar henüz public görev paylaşmamış',
+                  : 'Kullanıcılar henüz public görev veya rutin paylaşmamış',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.grey,

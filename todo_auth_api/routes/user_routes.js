@@ -18,7 +18,8 @@ router.get('/me', getMe);
 // Search for users
 router.get('/search', searchUsers);
 
-// Get a specific user's profile
-router.get('/:userId', getUserProfile);
+// Get a specific user's profile by USERNAME (not userId)
+// IMPORTANT: This must come AFTER /me and /search to avoid conflicts
+router.get('/profile/:username', getUserProfile);
 
 export default router;

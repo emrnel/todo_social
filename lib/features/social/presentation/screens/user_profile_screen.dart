@@ -20,19 +20,37 @@ final myProfileProvider = FutureProvider<dynamic>((ref) async {
   return await repository.getMyProfile();
 });
 
-class UserProfileScreen extends ConsumerWidget {
+class UserProfileScreen extends ConsumerStatefulWidget {
   final String? username;
 
   const UserProfileScreen({super.key, this.username});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Invalidate the provider when screen initializes to ensure fresh data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.username != null) {
+        ref.invalidate(userProfileProvider(widget.username!));
+      } else {
+        ref.invalidate(myProfileProvider);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // If username is null, show current user's profile
-    if (username == null) {
+    if (widget.username == null) {
       return const _MyProfileScreen();
     }
 
-    final usernameToFetch = username!;
+    final usernameToFetch = widget.username!;
     final profileAsync = ref.watch(userProfileProvider(usernameToFetch));
 
     return Scaffold(
@@ -114,7 +132,8 @@ class UserProfileScreen extends ConsumerWidget {
                                 } else {
                                   await repository.followUser(user.id);
                                 }
-                                ref.refresh(
+                                // Refresh profile data
+                                ref.invalidate(
                                     userProfileProvider(usernameToFetch));
                               } catch (e) {
                                 if (context.mounted) {
@@ -230,7 +249,7 @@ class UserProfileScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () =>
-                    ref.refresh(userProfileProvider(usernameToFetch)),
+                    ref.invalidate(userProfileProvider(usernameToFetch)),
                 child: const Text('Tekrar Dene'),
               ),
             ],
@@ -390,7 +409,7 @@ class _MyProfileScreen extends ConsumerWidget {
               Text('Hata: $error'),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => ref.refresh(myProfileProvider),
+                onPressed: () => ref.invalidate(myProfileProvider),
                 child: const Text('Tekrar Dene'),
               ),
             ],

@@ -4,9 +4,11 @@ class FeedItemModel {
   final String username;
   final String title;
   final String? description;
-  final bool isCompleted;
-  final bool isPublic;
+  final bool? isCompleted;
   final DateTime createdAt;
+  final String type; // 'todo' or 'routine'
+  final String? recurrenceType; // For routines
+  final String? recurrenceValue; // For routines
 
   FeedItemModel({
     required this.id,
@@ -14,21 +16,27 @@ class FeedItemModel {
     required this.username,
     required this.title,
     this.description,
-    required this.isCompleted,
-    required this.isPublic,
+    this.isCompleted,
     required this.createdAt,
+    required this.type,
+    this.recurrenceType,
+    this.recurrenceValue,
   });
 
   factory FeedItemModel.fromJson(Map<String, dynamic> json) {
     return FeedItemModel(
-      id: json['id'],
-      userId: json['userId'],
-      username: json['username'],
-      title: json['title'],
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      userId: json['userId'] is int
+          ? json['userId']
+          : int.parse(json['userId'].toString()),
+      username: json['username'] ?? '',
+      title: json['title'] ?? '',
       description: json['description'],
-      isCompleted: json['isCompleted'],
-      isPublic: json['isPublic'],
+      isCompleted: json['isCompleted'] == true || json['isCompleted'] == 1,
       createdAt: DateTime.parse(json['createdAt']),
+      type: json['type'] ?? 'todo',
+      recurrenceType: json['recurrenceType'],
+      recurrenceValue: json['recurrenceValue'],
     );
   }
 }

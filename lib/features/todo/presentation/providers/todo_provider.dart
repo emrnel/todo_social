@@ -1,10 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:todo_social/features/todo/data/repositories/todo_repository.dart';
 import 'package:todo_social/data/models/todo_model.dart';
 import 'package:todo_social/data/models/routine_model.dart';
+import 'package:todo_social/features/todo/data/repositories/todo_repository.dart';
 import 'package:todo_social/core/api/api_service.dart';
 
-// 1. Define the State class
+final todoRepositoryProvider = Provider((ref) {
+  final dio = ref.watch(apiServiceProvider);
+  return TodoRepository(dio);
+});
+
 class TodoState {
   final List<TodoModel> todos;
   final List<RoutineModel> routines;
@@ -33,19 +37,28 @@ class TodoState {
   }
 }
 
-// 2. Define the Notifier
-class TodoNotifier extends StateNotifier<TodoState> {
+class TodoProvider extends StateNotifier<TodoState> {
   final TodoRepository _repository;
 
-  TodoNotifier(this._repository) : super(TodoState());
+  TodoProvider(this._repository) : super(TodoState());
 
   Future<void> fetchMyTodos() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final result = await _repository.getMyTodosAndRoutines();
+      final data = await _repository.getMyTodos();
+
+      // Parse todos and routines from backend response
+      final todos = (data['todos'] as List<dynamic>? ?? [])
+          .map((json) => TodoModel.fromJson(json))
+          .toList();
+
+      final routines = (data['routines'] as List<dynamic>? ?? [])
+          .map((json) => RoutineModel.fromJson(json))
+          .toList();
+
       state = state.copyWith(
-        todos: result['todos'] as List<TodoModel>,
-        routines: result['routines'] as List<RoutineModel>,
+        todos: todos,
+        routines: routines,
         isLoading: false,
       );
     } catch (e) {
@@ -53,12 +66,18 @@ class TodoNotifier extends StateNotifier<TodoState> {
     }
   }
 
-  Future<void> createTodo(String title,
-      {String? description, bool isPublic = false}) async {
+  Future<void> createTodo(
+    String title, {
+    String? description,
+    bool isPublic = false,
+  }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final newTodo = await _repository.addTodo(title,
-          description: description, isPublic: isPublic);
+      final newTodo = await _repository.addTodo(
+        title,
+        description: description,
+        isPublic: isPublic,
+      );
       state = state.copyWith(
         todos: [newTodo, ...state.todos],
         isLoading: false,
@@ -68,54 +87,68 @@ class TodoNotifier extends StateNotifier<TodoState> {
     }
   }
 
-  Future<void> toggleTodo(int todoId, bool newStatus) async {
+  Future<void> addTodo(
+    String title, {
+    String? description,
+    bool isPublic = false,
+  }) async {
+    return createTodo(title, description: description, isPublic: isPublic);
+  }
+
+  Future<void> toggleTodo(int todoId, bool isCompleted) async {
     final originalTodos = state.todos;
 
-    // Optimistically update the UI
-    state = state.copyWith(
-      todos: originalTodos.map((todo) {
-        if (todo.id == todoId) {
-          return todo.copyWith(isCompleted: newStatus);
-        }
-        return todo;
-      }).toList(),
-    );
+    // Optimistic update
+    final updatedTodos = state.todos.map((todo) {
+      if (todo.id == todoId) {
+        return TodoModel(
+          id: todo.id,
+          userId: todo.userId,
+          title: todo.title,
+          description: todo.description,
+          isCompleted: isCompleted,
+          isPublic: todo.isPublic,
+          createdAt: todo.createdAt,
+          updatedAt: todo.updatedAt,
+        );
+      }
+      return todo;
+    }).toList();
+
+    state = state.copyWith(todos: updatedTodos);
 
     try {
-      // Make the API call
-      await _repository.updateTodoStatus(todoId, newStatus);
+      await _repository.updateTodo(todoId, isCompleted: isCompleted);
     } catch (e) {
-      // If the API call fails, revert to the original state
-      state = state.copyWith(todos: originalTodos, errorMessage: e.toString());
+      // Revert on error
+      state = state.copyWith(
+        todos: originalTodos,
+        errorMessage: e.toString(),
+      );
     }
   }
 
   Future<void> removeTodo(int todoId) async {
     final originalTodos = state.todos;
 
-    // Optimistically update the UI
+    // Optimistically remove
     state = state.copyWith(
       todos: originalTodos.where((todo) => todo.id != todoId).toList(),
     );
 
     try {
-      // Make the API call
       await _repository.deleteTodo(todoId);
     } catch (e) {
-      // If the API call fails, revert to the original state
-      state = state.copyWith(todos: originalTodos, errorMessage: e.toString());
+      // Revert on error
+      state = state.copyWith(
+        todos: originalTodos,
+        errorMessage: e.toString(),
+      );
     }
   }
 }
 
-// 3. Define the Repository Provider
-final todoRepositoryProvider = Provider<TodoRepository>((ref) {
-  final dio = ref.watch(apiServiceProvider);
-  return TodoRepository(dio);
-});
-
-// 4. Define the StateNotifier Provider
-final todoProvider = StateNotifierProvider<TodoNotifier, TodoState>((ref) {
+final todoProvider = StateNotifierProvider<TodoProvider, TodoState>((ref) {
   final repository = ref.watch(todoRepositoryProvider);
-  return TodoNotifier(repository);
+  return TodoProvider(repository);
 });

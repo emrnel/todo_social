@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_social/core/navigation/routes.dart';
 import 'package:todo_social/features/social/presentation/providers/social_provider.dart';
+import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 
 // Standalone version with AppBar (for navigation from routes)
 class SearchScreen extends ConsumerStatefulWidget {
@@ -69,7 +70,14 @@ class _SearchScreenContentState extends ConsumerState<SearchScreenContent> {
           child: Consumer(
             builder: (context, ref, _) {
               final state = ref.watch(socialProvider);
-              final results = state.searchResults;
+              final authState = ref.watch(authProvider);
+              final currentUserId = authState.currentUser?.id;
+
+              // Filter out current user from search results
+              final results = state.searchResults.where((user) {
+                return currentUserId == null || user.id != currentUserId;
+              }).toList();
+
               if (state.isSearchLoading) {
                 return const Center(child: CircularProgressIndicator());
               }
@@ -111,7 +119,7 @@ class _SearchScreenContentState extends ConsumerState<SearchScreenContent> {
                       ),
                     ),
                     title: Text('@${user.username}'),
-                    subtitle: Text(user.email ?? 'Email yok'), // NULL KONTROLÜ
+                    subtitle: Text(user.email ?? 'Email yok'),
                     onTap: () =>
                         context.push(Routes.userProfilePath(user.username)),
                   );
