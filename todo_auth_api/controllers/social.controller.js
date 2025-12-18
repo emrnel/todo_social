@@ -175,6 +175,13 @@ export const getFollowing = async (req, res) => {
     const userId = req.user.id;
     const currentUser = await User.findByPk(userId);
     
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Kullanıcı bulunamadı',
+      });
+    }
+    
     const followingUsers = await currentUser.getFollowing({
       attributes: ['id', 'username', 'email'],
     });
@@ -182,7 +189,7 @@ export const getFollowing = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Takip edilen kullanıcılar getirildi.',
-      data: { following: followingUsers },
+      data: { following: followingUsers.map(u => u.toJSON()) },
     });
   } catch (error) {
     console.error('Get Following Error:', error);

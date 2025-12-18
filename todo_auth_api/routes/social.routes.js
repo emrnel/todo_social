@@ -16,7 +16,7 @@ router.delete('/unfollow/:userId', unfollowUser);
 // Get the user's feed
 router.get('/feed', getFeed);
 
-// Get following users
+// Get following users list
 router.get('/following', getFollowing);
 
 export default router;
