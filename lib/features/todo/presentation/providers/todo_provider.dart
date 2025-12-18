@@ -47,21 +47,30 @@ class TodoProvider extends StateNotifier<TodoState> {
     try {
       final data = await _repository.getMyTodos();
 
-      // Parse todos and routines from backend response
-      final todos = (data['todos'] as List<dynamic>? ?? [])
-          .map((json) => TodoModel.fromJson(json))
-          .toList();
+      print('DEBUG: Backend response: $data');
 
-      final routines = (data['routines'] as List<dynamic>? ?? [])
-          .map((json) => RoutineModel.fromJson(json))
-          .toList();
+      // Parse todos and routines from backend response
+      final todos = (data['todos'] as List<dynamic>? ?? []).map((json) {
+        print('DEBUG: Parsing todo: $json');
+        return TodoModel.fromJson(json);
+      }).toList();
+
+      final routines = (data['routines'] as List<dynamic>? ?? []).map((json) {
+        print('DEBUG: Parsing routine: $json');
+        return RoutineModel.fromJson(json);
+      }).toList();
+
+      print(
+          'DEBUG: Parsed ${todos.length} todos and ${routines.length} routines');
 
       state = state.copyWith(
         todos: todos,
         routines: routines,
         isLoading: false,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('DEBUG: Error fetching todos: $e');
+      print('DEBUG: Stack trace: $stackTrace');
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }

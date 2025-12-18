@@ -17,15 +17,25 @@ class UserProfileModel {
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
+    // Safe integer parsing
+    int parseCount(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is String) {
+        try {
+          return int.parse(value);
+        } catch (e) {
+          return 0;
+        }
+      }
+      return 0;
+    }
+
     return UserProfileModel(
       user: UserModel.fromJson(json['user']),
       isFollowing: json['isFollowing'] == true,
-      followerCount: json['followerCount'] is int
-          ? json['followerCount']
-          : int.parse(json['followerCount'].toString()),
-      followingCount: json['followingCount'] is int
-          ? json['followingCount']
-          : int.parse(json['followingCount'].toString()),
+      followerCount: parseCount(json['followerCount']),
+      followingCount: parseCount(json['followingCount']),
       publicTodos: (json['publicTodos'] as List<dynamic>? ?? [])
           .map((todoJson) => PublicTodoModel.fromJson(todoJson))
           .toList(),
