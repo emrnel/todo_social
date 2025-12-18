@@ -34,10 +34,13 @@ export const getMe = async (req, res) => {
       message: 'Profil bilgileri başarıyla getirildi',
       data: {
         user: {
-          ...user.toJSON(),
-          followerCount,
-          followingCount,
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          createdAt: user.createdAt,
         },
+        followerCount,
+        followingCount,
       },
     });
   } catch (error) {
@@ -49,6 +52,7 @@ export const getMe = async (req, res) => {
     });
   }
 };
+
 
 /**
  * @name   searchUsers
