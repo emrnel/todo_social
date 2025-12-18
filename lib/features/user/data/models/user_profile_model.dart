@@ -19,10 +19,14 @@ class UserProfileModel {
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
     return UserProfileModel(
       user: UserModel.fromJson(json['user']),
-      isFollowing: json['isFollowing'],
-      followerCount: json['followerCount'],
-      followingCount: json['followingCount'],
-      publicTodos: (json['publicTodos'] as List)
+      isFollowing: json['isFollowing'] == true,
+      followerCount: json['followerCount'] is int
+          ? json['followerCount']
+          : int.parse(json['followerCount'].toString()),
+      followingCount: json['followingCount'] is int
+          ? json['followingCount']
+          : int.parse(json['followingCount'].toString()),
+      publicTodos: (json['publicTodos'] as List<dynamic>? ?? [])
           .map((todoJson) => PublicTodoModel.fromJson(todoJson))
           .toList(),
     );

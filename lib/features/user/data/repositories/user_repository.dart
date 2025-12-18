@@ -44,6 +44,17 @@ class UserRepository {
     }
   }
 
+  Future<List<UserModel>> getFollowingUsers() async {
+    try {
+      final response = await _dio.get('/social/following');
+      final List<dynamic> userList = response.data['data']['following'] ?? [];
+      return userList.map((json) => UserModel.fromJson(json)).toList();
+    } on DioException catch (e) {
+      throw Exception(
+          'Takip edilen kullanıcıları getirme hatası: ${e.message}');
+    }
+  }
+
   Future<void> followUser(int userId) async {
     try {
       await _dio.post('/social/follow/$userId');

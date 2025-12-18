@@ -23,15 +23,19 @@ class RoutineModel {
 
   factory RoutineModel.fromJson(Map<String, dynamic> json) {
     return RoutineModel(
-      id: json['id'],
-      userId: json['userId'],
-      title: json['title'],
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      userId: json['userId'] is int
+          ? json['userId']
+          : int.parse(json['userId'].toString()),
+      title: json['title'] ?? '',
       description: json['description'],
       isPublic: json['isPublic'] == true || json['isPublic'] == 1,
-      recurrenceType: json['recurrenceType'],
+      recurrenceType: json['recurrenceType'] ?? 'daily',
       recurrenceValue: json['recurrenceValue'],
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
   }
 

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:todo_social/core/navigation/routes.dart';
 import 'package:todo_social/features/feed/presentation/providers/feed_provider.dart';
+import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
+import 'package:todo_social/features/social/presentation/providers/social_provider.dart';
 
 enum FeedFilter { following, discover }
 
@@ -22,7 +24,10 @@ class _FeedTabState extends ConsumerState<FeedTab> {
     super.didChangeDependencies();
     if (!_loaded) {
       _loaded = true;
-      Future.microtask(() => ref.read(feedProvider.notifier).fetchFeed());
+      Future.microtask(() {
+        ref.read(feedProvider.notifier).fetchFeed();
+        ref.read(socialProvider.notifier).fetchFollowingUsers();
+      });
     }
   }
 
@@ -88,8 +93,25 @@ class _FeedTabState extends ConsumerState<FeedTab> {
       );
     }
 
-    // Filter is handled in backend now - all public items are returned
-    final filteredItems = state.feedItems;
+    // Filter based on current filter mode
+    final socialState = ref.watch(socialProvider);
+    final authState = ref.watch(authProvider);
+    final currentUserId = authState.currentUser?.id;
+
+    final filteredItems = state.feedItems.where((item) {
+      // Don't show current user's items
+      if (currentUserId != null && item.userId == currentUserId) {
+        return false;
+      }
+
+      // For following mode, only show items from followed users
+      if (_currentFilter == FeedFilter.following) {
+        return socialState.followingUserIds.contains(item.userId);
+      }
+
+      // For discover mode, show all public items
+      return true;
+    }).toList();
 
     if (filteredItems.isEmpty) {
       return _buildEmptyState();

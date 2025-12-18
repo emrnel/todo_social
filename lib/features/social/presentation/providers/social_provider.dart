@@ -14,6 +14,7 @@ class SocialState {
   final String? profileErrorMessage;
   final UserModel? currentUser;
   final bool isCurrentUserLoading;
+  final List<int> followingUserIds; // NEW: Track following user IDs
 
   SocialState({
     this.searchResults = const [],
@@ -24,6 +25,7 @@ class SocialState {
     this.profileErrorMessage,
     this.currentUser,
     this.isCurrentUserLoading = false,
+    this.followingUserIds = const [], // NEW
   });
 
   SocialState copyWith({
@@ -35,6 +37,7 @@ class SocialState {
     String? profileErrorMessage,
     UserModel? currentUser,
     bool? isCurrentUserLoading,
+    List<int>? followingUserIds, // NEW
   }) {
     return SocialState(
       searchResults: searchResults ?? this.searchResults,
@@ -45,6 +48,7 @@ class SocialState {
       profileErrorMessage: profileErrorMessage ?? this.profileErrorMessage,
       currentUser: currentUser ?? this.currentUser,
       isCurrentUserLoading: isCurrentUserLoading ?? this.isCurrentUserLoading,
+      followingUserIds: followingUserIds ?? this.followingUserIds, // NEW
     );
   }
 }
@@ -101,6 +105,15 @@ class SocialNotifier extends StateNotifier<SocialState> {
       ),
     );
 
+    // Update following list
+    List<int> newFollowingIds = List.from(state.followingUserIds);
+    if (newStatus) {
+      newFollowingIds.add(originalProfile.user.id);
+    } else {
+      newFollowingIds.remove(originalProfile.user.id);
+    }
+    state = state.copyWith(followingUserIds: newFollowingIds);
+
     try {
       if (newStatus) {
         await _userRepository.followUser(originalProfile.user.id);
@@ -109,8 +122,10 @@ class SocialNotifier extends StateNotifier<SocialState> {
       }
     } catch (e) {
       // Revert on failure
-      state = state.copyWith(userProfile: originalProfile);
-      // TODO: Show an error message to the user
+      state = state.copyWith(
+        userProfile: originalProfile,
+        followingUserIds: state.followingUserIds,
+      );
     }
   }
 
@@ -121,6 +136,17 @@ class SocialNotifier extends StateNotifier<SocialState> {
       state = state.copyWith(currentUser: user, isCurrentUserLoading: false);
     } catch (e) {
       state = state.copyWith(isCurrentUserLoading: false);
+    }
+  }
+
+  // NEW: Fetch following users
+  Future<void> fetchFollowingUsers() async {
+    try {
+      final following = await _userRepository.getFollowingUsers();
+      final followingIds = following.map((u) => u.id).toList();
+      state = state.copyWith(followingUserIds: followingIds);
+    } catch (e) {
+      // Silent fail - not critical
     }
   }
 }

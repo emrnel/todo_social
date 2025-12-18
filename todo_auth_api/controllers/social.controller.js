@@ -163,3 +163,32 @@ export const getFeed = async (req, res) => {
     res.status(500).json({ success: false, message: 'Sunucu hatası: ' + error.message });
   }
 };
+
+/**
+ * @name   getFollowing
+ * @desc   Get list of users that current user is following
+ * @route  GET /api/social/following
+ * @access Private
+ */
+export const getFollowing = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const currentUser = await User.findByPk(userId);
+    
+    const followingUsers = await currentUser.getFollowing({
+      attributes: ['id', 'username', 'email'],
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Takip edilen kullanıcılar getirildi.',
+      data: { following: followingUsers },
+    });
+  } catch (error) {
+    console.error('Get Following Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Sunucu hatası: ' + error.message 
+    });
+  }
+};
