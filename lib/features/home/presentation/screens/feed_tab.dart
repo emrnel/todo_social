@@ -93,20 +93,22 @@ class _FeedTabState extends ConsumerState<FeedTab> {
       );
     }
 
-    // Filter based on current filter mode
-    final socialState = ref.watch(socialProvider);
+    // Get current user ID and following list
     final authState = ref.watch(authProvider);
+    final socialState = ref.watch(socialProvider);
     final currentUserId = authState.currentUser?.id;
+    final followingUserIds = socialState.followingUserIds;
 
+    // Filter items based on current mode
     final filteredItems = state.feedItems.where((item) {
-      // Don't show current user's items
+      // Never show current user's own items in feed
       if (currentUserId != null && item.userId == currentUserId) {
         return false;
       }
 
       // For following mode, only show items from followed users
       if (_currentFilter == FeedFilter.following) {
-        return socialState.followingUserIds.contains(item.userId);
+        return followingUserIds.contains(item.userId);
       }
 
       // For discover mode, show all public items
