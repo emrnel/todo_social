@@ -16,15 +16,11 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   String _recurrenceType = 'daily';
-  bool _isPublic = false; // Public seçeneği eklendi
+  bool _isPublic = false;
   bool _isLoading = false;
 
-  final List<String> _recurrenceOptions = [
-    'daily',
-    'weekly',
-    'monthly',
-    'custom'
-  ];
+  // Backend only supports these 3 types
+  final List<String> _recurrenceOptions = ['daily', 'weekly', 'custom'];
 
   Future<void> _saveRoutine() async {
     if (_titleController.text.trim().isEmpty) {
@@ -42,7 +38,7 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
             description: _descriptionController.text.trim().isEmpty
                 ? null
                 : _descriptionController.text.trim(),
-            isPublic: _isPublic, // Public değeri gönderiliyor
+            isPublic: _isPublic,
             recurrenceType: _recurrenceType,
           );
       if (!mounted) return;
@@ -99,7 +95,6 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
               },
             ),
             const SizedBox(height: 12),
-            // PUBLIC SEÇENEĞİ EKLENDİ
             SwitchListTile(
               value: _isPublic,
               onChanged: (v) => setState(() => _isPublic = v),

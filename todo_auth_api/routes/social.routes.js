@@ -1,5 +1,5 @@
 import express from 'express';
-import { followUser, unfollowUser, getFeed } from '../controllers/social.controller.js';
+import { followUser, unfollowUser, getFeed, getFollowing } from '../controllers/social.controller.js';
 import authMiddleware from '../controllers/auth.middleware.js';
 
 const router = express.Router();
@@ -15,5 +15,8 @@ router.delete('/unfollow/:userId', unfollowUser);
 
 // Get the user's feed
 router.get('/feed', getFeed);
+
+// Get following users
+router.get('/following', getFollowing);
 
 export default router;
