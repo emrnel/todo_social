@@ -8,6 +8,9 @@ import 'package:todo_social/core/api/api_service.dart';
 import 'package:todo_social/features/user/data/repositories/user_repository.dart';
 import 'package:todo_social/core/navigation/routes.dart';
 import 'package:todo_social/features/feed/presentation/providers/feed_provider.dart';
+import 'package:todo_social/features/social/presentation/screens/edit_profile_screen.dart';
+import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
+import 'package:todo_social/features/user/data/models/public_todo_model.dart';
 
 final userProfileProvider =
     FutureProvider.family<dynamic, String>((ref, username) async {
@@ -35,7 +38,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Invalidate on init for fresh data
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.username != null) {
         ref.invalidate(userProfileProvider(widget.username!));
@@ -47,7 +49,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // If username is null, show current user's profile
     if (widget.username == null) {
       return const _MyProfileScreen();
     }
@@ -62,10 +63,18 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       body: profileAsync.when(
         data: (profileData) {
           final user = profileData.user;
-          final publicTodos = profileData.publicTodos;
+          final publicTodos = profileData.publicTodos as List<PublicTodoModel>;
           final isFollowing = profileData.isFollowing;
           final followerCount = profileData.followerCount;
           final followingCount = profileData.followingCount;
+
+          // Separate completed and active todos - FIX: Type casting
+          final activeTodos = publicTodos
+              .where((PublicTodoModel todo) => !todo.isCompleted)
+              .toList();
+          final completedTodos = publicTodos
+              .where((PublicTodoModel todo) => todo.isCompleted)
+              .toList();
 
           return SingleChildScrollView(
             child: Column(
@@ -82,15 +91,23 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         children: [
                           CircleAvatar(
                             radius: 40,
+                            backgroundImage: user.profilePicture != null &&
+                                    user.profilePicture!.isNotEmpty
+                                ? NetworkImage(user.profilePicture!)
+                                : null,
                             backgroundColor: Colors.teal,
-                            child: Text(
-                              user.username[0].toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 32,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            onBackgroundImageError: (_, __) {},
+                            child: user.profilePicture == null ||
+                                    user.profilePicture!.isEmpty
+                                ? Text(
+                                    user.username[0].toUpperCase(),
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : null,
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -104,18 +121,27 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                Text(
-                                  user.email ?? '',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade600,
+                                if (user.email != null)
+                                  Text(
+                                    user.email!,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade600,
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                           ),
                         ],
                       ),
+                      // Bio
+                      if (user.bio != null && user.bio!.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          user.bio!,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       Row(
                         children: [
@@ -135,16 +161,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                                   await repository.followUser(user.id);
                                 }
 
-                                // Refresh profile data
                                 ref.invalidate(
                                     userProfileProvider(usernameToFetch));
 
-                                // Refresh following list
                                 await ref
                                     .read(socialProvider.notifier)
                                     .fetchFollowingUsers();
 
-                                // Refresh feed
                                 ref.read(feedProvider.notifier).fetchFeed();
                               } catch (e) {
                                 if (context.mounted) {
@@ -200,48 +223,42 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                             ),
                           ),
                         )
-                      else
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: publicTodos.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final todo = publicTodos[index];
-                            return Card(
-                              child: ListTile(
-                                leading: Icon(
-                                  todo.isCompleted
-                                      ? Icons.check_circle
-                                      : Icons.radio_button_unchecked,
-                                  color: todo.isCompleted
-                                      ? Colors.green
-                                      : Colors.grey,
-                                ),
-                                title: Text(
-                                  todo.title,
-                                  style: TextStyle(
-                                    decoration: todo.isCompleted
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  ),
-                                ),
-                                subtitle: todo.description != null &&
-                                        todo.description!.isNotEmpty
-                                    ? Text(todo.description!)
-                                    : null,
-                                trailing: Text(
-                                  _formatDate(todo.createdAt),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
+                      else ...[
+                        // Active todos
+                        if (activeTodos.isNotEmpty) ...[
+                          const Text(
+                            'Aktif Görevler',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ...activeTodos.map(
+                            (todo) => _buildTodoCard(todo, context),
+                          ),
+                        ],
+
+                        // Completed todos
+                        if (completedTodos.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          Card(
+                            color: Colors.grey.shade100,
+                            child: ExpansionTile(
+                              leading: const Icon(Icons.check_circle,
+                                  color: Colors.green),
+                              title: Text(
+                                'Tamamlananlar (${completedTodos.length})',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
                               ),
-                            );
-                          },
-                        ),
+                              children: completedTodos
+                                  .map((todo) => _buildTodoCard(todo, context))
+                                  .toList(),
+                            ),
+                          ),
+                        ],
+                      ],
                     ],
                   ),
                 ),
@@ -265,6 +282,149 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTodoCard(PublicTodoModel todo, BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  todo.isCompleted
+                      ? Icons.check_circle
+                      : Icons.radio_button_unchecked,
+                  color: todo.isCompleted ? Colors.green : Colors.grey,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        todo.title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          decoration: todo.isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                      if (todo.description != null &&
+                          todo.description!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            todo.description!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ),
+                      // Show "from username" if copied
+                      if (todo.originalAuthor != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: InkWell(
+                            onTap: () {
+                              final username = todo.originalAuthor!['username'];
+                              if (username != null) {
+                                context.push(Routes.userProfilePath(username));
+                              }
+                            },
+                            child: Text(
+                              'from @${todo.originalAuthor!['username']}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue.shade700,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Text(
+                  _formatDate(todo.createdAt),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+            // Like and copy buttons
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    todo.isLiked ? Icons.favorite : Icons.favorite_border,
+                    color: todo.isLiked ? Colors.red : Colors.grey,
+                    size: 20,
+                  ),
+                  onPressed: () async {
+                    try {
+                      await ref.read(todoProvider.notifier).toggleLike(todo.id);
+                      ref.invalidate(userProfileProvider(widget.username!));
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Hata: ${e.toString()}'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+                if (todo.likeCount > 0)
+                  Text(
+                    '${todo.likeCount}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.copy, color: Colors.blue, size: 20),
+                  onPressed: () async {
+                    try {
+                      await ref.read(todoProvider.notifier).copyTodo(todo.id);
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Görev kopyalandı!'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Hata: ${e.toString()}'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+                const Text('Kopyala', style: TextStyle(fontSize: 12)),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -323,7 +483,6 @@ class _MyProfileScreen extends ConsumerWidget {
     return Scaffold(
       body: profileAsync.when(
         data: (data) {
-          // data is Map<String, dynamic>
           final user = data['user'] as UserModel;
           final followerCount = data['followerCount'] as int? ?? 0;
           final followingCount = data['followingCount'] as int? ?? 0;
@@ -340,16 +499,24 @@ class _MyProfileScreen extends ConsumerWidget {
                     children: [
                       CircleAvatar(
                         radius: 50,
+                        backgroundImage: user.profilePicture != null &&
+                                user.profilePicture!.isNotEmpty
+                            ? NetworkImage(user.profilePicture!)
+                            : null,
                         backgroundColor: Colors.teal,
-                        child: Text(
-                          user.username[0].toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 40,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: user.profilePicture == null ||
+                                user.profilePicture!.isEmpty
+                            ? Text(
+                                user.username[0].toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 40,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            : null,
                       ),
+
                       const SizedBox(height: 16),
                       Text(
                         '@${user.username}',
@@ -358,13 +525,32 @@ class _MyProfileScreen extends ConsumerWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        user.email ?? '',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade600,
+                      if (user.email != null)
+                        Text(
+                          user.email!,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
-                      ),
+
+                      // Bio
+                      if (user.bio != null && user.bio!.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            user.bio!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+
                       const SizedBox(height: 16),
 
                       // Stats Row
@@ -380,6 +566,37 @@ class _MyProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
+
+                // Edit Profile Button
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditProfileScreen(
+                            currentBio: user.bio ?? '',
+                            currentProfilePicture: user.profilePicture,
+                          ),
+                        ),
+                      );
+
+                      if (result == true) {
+                        ref.invalidate(myProfileProvider);
+                      }
+                    },
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Profili Düzenle'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
 
                 // Logout Button
                 Padding(

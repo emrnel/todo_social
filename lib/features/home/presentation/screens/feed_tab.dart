@@ -5,6 +5,7 @@ import 'package:todo_social/core/navigation/routes.dart';
 import 'package:todo_social/features/feed/presentation/providers/feed_provider.dart';
 import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 import 'package:todo_social/features/social/presentation/providers/social_provider.dart';
+import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
 
 enum FeedFilter { following, discover }
 
@@ -17,7 +18,7 @@ class FeedTab extends ConsumerStatefulWidget {
 
 class _FeedTabState extends ConsumerState<FeedTab> {
   bool _loaded = false;
-  FeedFilter _currentFilter = FeedFilter.discover; // Default to discover
+  FeedFilter _currentFilter = FeedFilter.discover;
 
   @override
   void didChangeDependencies() {
@@ -37,7 +38,6 @@ class _FeedTabState extends ConsumerState<FeedTab> {
 
     return Column(
       children: [
-        // Filter Segmented Button
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: SegmentedButton<FeedFilter>(
@@ -61,8 +61,6 @@ class _FeedTabState extends ConsumerState<FeedTab> {
             },
           ),
         ),
-
-        // Feed Content
         Expanded(
           child: _buildFeedContent(state),
         ),
@@ -93,25 +91,20 @@ class _FeedTabState extends ConsumerState<FeedTab> {
       );
     }
 
-    // Get current user ID and following list
     final authState = ref.watch(authProvider);
     final socialState = ref.watch(socialProvider);
     final currentUserId = authState.currentUser?.id;
     final followingUserIds = socialState.followingUserIds;
 
-    // Filter items based on current mode
     final filteredItems = state.feedItems.where((item) {
-      // Never show current user's own items in feed
       if (currentUserId != null && item.userId == currentUserId) {
         return false;
       }
 
-      // For following mode, only show items from followed users
       if (_currentFilter == FeedFilter.following) {
         return followingUserIds.contains(item.userId);
       }
 
-      // For discover mode, show all public items
       return true;
     }).toList();
 
@@ -132,18 +125,17 @@ class _FeedTabState extends ConsumerState<FeedTab> {
           return Card(
             elevation: 2,
             color: isTodo ? null : Colors.green.shade50,
-            child: InkWell(
-              onTap: () {
-                // Navigate to user profile
-                context.push(Routes.userProfilePath(item.username));
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // User info header
-                    Row(
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // User info header
+                  InkWell(
+                    onTap: () {
+                      context.push(Routes.userProfilePath(item.username));
+                    },
+                    child: Row(
                       children: [
                         CircleAvatar(
                           backgroundColor: isTodo ? Colors.teal : Colors.green,
@@ -206,54 +198,131 @@ class _FeedTabState extends ConsumerState<FeedTab> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    // Content
-                    Text(
-                      item.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        decoration: (isTodo && item.isCompleted == true)
-                            ? TextDecoration.lineThrough
-                            : null,
+                  ),
+                  const SizedBox(height: 12),
+                  // Content
+                  Text(
+                    item.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      decoration: (isTodo && item.isCompleted == true)
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
+                  ),
+                  if (item.description != null && item.description!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        item.description!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                        ),
                       ),
                     ),
-                    if (item.description != null &&
-                        item.description!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          item.description!,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
+                  // Show recurrence info for routines
+                  if (!isTodo && item.recurrenceType != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.repeat,
+                            size: 16,
+                            color: Colors.grey.shade600,
                           ),
-                        ),
-                      ),
-                    // Show recurrence info for routines
-                    if (!isTodo && item.recurrenceType != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.repeat,
-                              size: 16,
+                          const SizedBox(width: 4),
+                          Text(
+                            'Tekrar: ${item.recurrenceType}',
+                            style: TextStyle(
+                              fontSize: 12,
                               color: Colors.grey.shade600,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Tekrar: ${item.recurrenceType}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
+                    ),
+
+                  // Action buttons for todos
+                  if (isTodo) ...[
+                    const Divider(height: 24),
+                    Row(
+                      children: [
+                        // Like button
+                        IconButton(
+                          icon: Icon(
+                            item.isLiked == true
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color:
+                                item.isLiked == true ? Colors.red : Colors.grey,
+                          ),
+                          onPressed: () async {
+                            try {
+                              await ref
+                                  .read(feedProvider.notifier)
+                                  .toggleLike(item.id);
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Hata: ${e.toString()}'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                        if (item.likeCount != null && item.likeCount! > 0)
+                          Text(
+                            '${item.likeCount}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        const SizedBox(width: 8),
+                        // Copy button
+                        IconButton(
+                          icon: const Icon(Icons.copy, color: Colors.blue),
+                          onPressed: () async {
+                            try {
+                              await ref
+                                  .read(todoProvider.notifier)
+                                  .copyTodo(item.id);
+
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Görev kopyalandı!'),
+                                    backgroundColor: Colors.green,
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Hata: ${e.toString()}'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                        const Text(
+                          'Kopyala',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           );

@@ -49,7 +49,6 @@ class TodoProvider extends StateNotifier<TodoState> {
 
       print('DEBUG: Backend response: $data');
 
-      // Parse todos and routines from backend response
       final todos = (data['todos'] as List<dynamic>? ?? []).map((json) {
         print('DEBUG: Parsing todo: $json');
         return TodoModel.fromJson(json);
@@ -110,16 +109,7 @@ class TodoProvider extends StateNotifier<TodoState> {
     // Optimistic update
     final updatedTodos = state.todos.map((todo) {
       if (todo.id == todoId) {
-        return TodoModel(
-          id: todo.id,
-          userId: todo.userId,
-          title: todo.title,
-          description: todo.description,
-          isCompleted: isCompleted,
-          isPublic: todo.isPublic,
-          createdAt: todo.createdAt,
-          updatedAt: todo.updatedAt,
-        );
+        return todo.copyWith(isCompleted: isCompleted);
       }
       return todo;
     }).toList();
@@ -153,6 +143,54 @@ class TodoProvider extends StateNotifier<TodoState> {
         todos: originalTodos,
         errorMessage: e.toString(),
       );
+    }
+  }
+
+  Future<void> copyTodo(int todoId) async {
+    try {
+      final copiedTodo = await _repository.copyTodo(todoId);
+      state = state.copyWith(
+        todos: [copiedTodo, ...state.todos],
+      );
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+      rethrow;
+    }
+  }
+
+  Future<void> toggleLike(int todoId) async {
+    final originalTodos = state.todos;
+
+    final currentTodo = state.todos.firstWhere((todo) => todo.id == todoId);
+    final isCurrentlyLiked = currentTodo.isLiked;
+
+    // Optimistic update
+    final updatedTodos = state.todos.map((todo) {
+      if (todo.id == todoId) {
+        return todo.copyWith(
+          isLiked: !isCurrentlyLiked,
+          likeCount:
+              isCurrentlyLiked ? (todo.likeCount) - 1 : (todo.likeCount) + 1,
+        );
+      }
+      return todo;
+    }).toList();
+
+    state = state.copyWith(todos: updatedTodos);
+
+    try {
+      if (isCurrentlyLiked) {
+        await _repository.unlikeTodo(todoId);
+      } else {
+        await _repository.likeTodo(todoId);
+      }
+    } catch (e) {
+      // Revert on error
+      state = state.copyWith(
+        todos: originalTodos,
+        errorMessage: e.toString(),
+      );
+      rethrow;
     }
   }
 }

@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import Todo from '../models/Todo.js';
 import Routine from '../models/Routine.js';
 import Follow from '../models/Follow.js';
+import TodoLike from '../models/TodoLike.js';
 import { Op } from 'sequelize';
 
 /**
@@ -19,7 +20,6 @@ export const followUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Kendinizi takip edemezsiniz.' });
     }
 
-    // Get the instance of the current user (the one who will follow)
     const currentUser = await User.findByPk(followerId);
     const userToFollow = await User.findByPk(followingId);
 
@@ -27,13 +27,11 @@ export const followUser = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Takip edilecek kullanıcı bulunamadı.' });
     }
 
-    // Use Sequelize's magic method to check if the association already exists
     const alreadyFollowing = await currentUser.hasFollowing(userToFollow);
     if (alreadyFollowing) {
       return res.status(409).json({ success: false, message: 'Bu kullanıcı zaten takip ediliyor.' });
     }
 
-    // Use Sequelize's magic method to create the association in the 'followers' table
     await currentUser.addFollowing(userToFollow);
 
     res.status(200).json({ success: true, message: `Kullanıcı başarıyla takip edildi: ${userToFollow.username}` });
@@ -57,13 +55,11 @@ export const unfollowUser = async (req, res) => {
     const currentUser = await User.findByPk(followerId);
     const userToUnfollow = await User.findByPk(followingId);
 
-    // Check if the association exists before trying to remove it
     const isFollowing = await currentUser.hasFollowing(userToUnfollow);
     if (!isFollowing) {
       return res.status(404).json({ success: false, message: 'Takip edilmeyen bir kullanıcıyı takipten çıkamazsınız.' });
     }
 
-    // Use Sequelize's magic method to remove the association
     await currentUser.removeFollowing(userToUnfollow);
 
     res.status(200).json({ success: true, message: 'Kullanıcı takipten çıkarıldı.' });
@@ -83,18 +79,12 @@ export const getFeed = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // 1. Get the current user instance
     const currentUser = await User.findByPk(userId);
 
-    // 2. Use Sequelize's magic method to get all followed users' IDs
     const followingUsers = await currentUser.getFollowing({ attributes: ['id'] });
     const followingIds = followingUsers.map(u => u.id);
 
-    // For discover mode, get ALL public todos and routines
-    // For following mode, filter by followingIds
-    // Frontend will handle the filtering based on the mode selected
-
-    // Get all public todos
+    // Get all public todos with author info
     const [feedTodos, feedRoutines] = await Promise.all([
       Todo.findAll({
         where: {
@@ -122,27 +112,42 @@ export const getFeed = async (req, res) => {
       }),
     ]);
 
-    // Combine todos and routines into a unified feed with type field
+    // Check likes for todos
+    const todosWithLikes = await Promise.all(
+      feedTodos.map(async (todo) => {
+        const isLiked = await TodoLike.findOne({
+          where: { userId: userId, todoId: todo.id },
+        });
+
+        return {
+          id: todo.id,
+          userId: todo.userId,
+          username: todo.author.username,
+          title: todo.title,
+          description: todo.description,
+          isCompleted: todo.isCompleted,
+          isPublic: todo.isPublic,
+          likeCount: todo.likeCount || 0,
+          isLiked: !!isLiked,
+          createdAt: todo.createdAt,
+          type: 'todo',
+        };
+      })
+    );
+
+    // Combine todos and routines into a unified feed
     const feed = [
-      ...feedTodos.map(todo => ({
-        id: todo.id,
-        userId: todo.userId,
-        username: todo.author.username,
-        title: todo.title,
-        description: todo.description,
-        isCompleted: todo.isCompleted,
-        isPublic: todo.isPublic,
-        createdAt: todo.createdAt,
-        type: 'todo',
-      })),
+      ...todosWithLikes,
       ...feedRoutines.map(routine => ({
         id: routine.id,
         userId: routine.userId,
         username: routine.author.username,
         title: routine.title,
         description: routine.description,
-        isCompleted: null, // Routines don't have completion status
+        isCompleted: null,
         isPublic: routine.isPublic,
+        likeCount: null,
+        isLiked: null,
         createdAt: routine.createdAt,
         type: 'routine',
         recurrenceType: routine.recurrenceType,

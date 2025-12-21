@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:todo_social/core/common/widgets/custom_button.dart';
 import 'package:todo_social/core/common/widgets/custom_text_field.dart';
 import 'package:todo_social/features/routine/presentation/providers/routine_provider.dart';
+import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
 
 class AddRoutineScreen extends ConsumerStatefulWidget {
   const AddRoutineScreen({super.key});
@@ -19,7 +20,6 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
   bool _isPublic = false;
   bool _isLoading = false;
 
-  // Backend only supports these 3 types
   final List<String> _recurrenceOptions = ['daily', 'weekly', 'custom'];
 
   Future<void> _saveRoutine() async {
@@ -41,6 +41,10 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
             isPublic: _isPublic,
             recurrenceType: _recurrenceType,
           );
+
+      // REFRESH TODO PROVIDER (todos ve routines birlikte geliyor)
+      await ref.read(todoProvider.notifier).fetchMyTodos();
+
       if (!mounted) return;
       final state = ref.read(routineProvider);
       if (state.errorMessage != null) {

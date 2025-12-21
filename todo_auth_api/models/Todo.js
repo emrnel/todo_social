@@ -11,7 +11,7 @@ const Todo = sequelize.define('Todo', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'users', // 'users' table
+      model: 'users',
       key: 'id',
     },
   },
@@ -30,6 +30,18 @@ const Todo = sequelize.define('Todo', {
   isPublic: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
+  },
+  likeCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  originalAuthorId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id',
+    },
   },
 }, {
   tableName: 'todos',
