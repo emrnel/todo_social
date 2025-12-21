@@ -39,7 +39,6 @@ class UserRepository {
       final response = await _dio.get('/users/me');
       final data = response.data['data'];
 
-      // Parse with follower counts
       return {
         'user': UserModel.fromJson(data['user']),
         'followerCount': _parseCount(data['followerCount']),
@@ -47,6 +46,19 @@ class UserRepository {
       };
     } on DioException catch (e) {
       throw Exception('Profil getirme hatası: ${e.message}');
+    }
+  }
+
+  Future<UserModel> updateProfile({String? bio, String? profilePicture}) async {
+    try {
+      final Map<String, dynamic> data = {};
+      if (bio != null) data['bio'] = bio;
+      if (profilePicture != null) data['profilePicture'] = profilePicture;
+
+      final response = await _dio.patch('/users/me', data: data);
+      return UserModel.fromJson(response.data['data']['user']);
+    } on DioException catch (e) {
+      throw Exception('Profil güncelleme hatası: ${e.message}');
     }
   }
 

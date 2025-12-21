@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import Todo from '../models/Todo.js';
+import TodoLike from '../models/TodoLike.js';
 import { Op } from 'sequelize';
 import Follow from '../models/Follow.js';
 
@@ -25,7 +26,6 @@ export const getMe = async (req, res) => {
       });
     }
 
-    // Get follower and following counts as integers
     const followerCount = parseInt(await user.countFollowers(), 10) || 0;
     const followingCount = parseInt(await user.countFollowing(), 10) || 0;
 
@@ -37,6 +37,8 @@ export const getMe = async (req, res) => {
           id: user.id,
           username: user.username,
           email: user.email,
+          bio: user.bio,
+          profilePicture: user.profilePicture,
           createdAt: user.createdAt,
         },
         followerCount,
@@ -53,6 +55,55 @@ export const getMe = async (req, res) => {
   }
 };
 
+/**
+ * @name   updateProfile
+ * @desc   Update user profile (bio, profilePicture)
+ * @route  PATCH /api/users/me
+ * @access Private
+ */
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { bio, profilePicture } = req.body;
+
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Kullanıcı bulunamadı',
+        error: { code: 'USER_NOT_FOUND' },
+      });
+    }
+
+    await user.update({
+      bio: bio !== undefined ? bio : user.bio,
+      profilePicture: profilePicture !== undefined ? profilePicture : user.profilePicture,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profil güncellendi',
+      data: {
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          bio: user.bio,
+          profilePicture: user.profilePicture,
+          createdAt: user.createdAt,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Update Profile Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message,
+      error: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+  }
+};
 
 /**
  * @name   searchUsers
@@ -77,7 +128,7 @@ export const searchUsers = async (req, res) => {
           [Op.like]: `%${q}%`,
         },
       },
-      attributes: ['id', 'username'],
+      attributes: ['id', 'username', 'bio', 'profilePicture'],
       limit: 10,
     });
 
@@ -105,10 +156,9 @@ export const getUserProfile = async (req, res) => {
     const { username } = req.params;
     const currentUserId = req.user.id;
 
-    // Find user by username
     const user = await User.findOne({
       where: { username: username },
-      attributes: ['id', 'username', 'email', 'createdAt'],
+      attributes: ['id', 'username', 'email', 'bio', 'profilePicture', 'createdAt'],
     });
 
     if (!user) {
@@ -119,22 +169,42 @@ export const getUserProfile = async (req, res) => {
       });
     }
 
-    // Get follower and following counts as integers
     const followerCount = parseInt(await user.countFollowers(), 10) || 0;
     const followingCount = parseInt(await user.countFollowing(), 10) || 0;
 
-    // Get public todos for this user
     const publicTodos = await Todo.findAll({
       where: {
         userId: user.id,
         isPublic: true,
       },
-      attributes: ['id', 'title', 'description', 'isCompleted', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'title', 'description', 'isCompleted', 'likeCount', 'createdAt', 'updatedAt'],
       order: [['createdAt', 'DESC']],
-      limit: 20,
+      limit: 50,
+      include: [
+        {
+          model: User,
+          as: 'originalAuthor',
+          attributes: ['id', 'username'],
+        },
+      ],
     });
 
-    // Check if current user is following this user
+    // Check if current user liked each todo
+    const todosWithLikes = await Promise.all(
+      publicTodos.map(async (todo) => {
+        const isLiked = await TodoLike.findOne({
+          where: { userId: currentUserId, todoId: todo.id },
+        });
+        
+        const todoJson = todo.toJSON();
+        return {
+          ...todoJson,
+          isLiked: !!isLiked,
+          originalAuthor: todoJson.originalAuthor || null,
+        };
+      })
+    );
+
     const currentUser = await User.findByPk(currentUserId);
     const isFollowing = await currentUser.hasFollowing(user);
 
@@ -145,11 +215,13 @@ export const getUserProfile = async (req, res) => {
           id: user.id,
           username: user.username,
           email: user.email,
+          bio: user.bio,
+          profilePicture: user.profilePicture,
           createdAt: user.createdAt,
         },
         followerCount,
         followingCount,
-        publicTodos: publicTodos.map(todo => todo.toJSON()),
+        publicTodos: todosWithLikes,
         isFollowing,
       },
     });

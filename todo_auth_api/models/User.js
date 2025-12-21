@@ -1,11 +1,7 @@
 import { DataTypes } from 'sequelize';
-// Import the sequelize connection from db.js
-// '../' means 'go up one directory' (from models/ to the root)
 import sequelize from '../db.js'; 
 
-// Define the User model
 const User = sequelize.define('User', {
-  // Model attributes (table columns) are defined here
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -13,28 +9,32 @@ const User = sequelize.define('User', {
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: false, // This column cannot be empty
-    unique: true, // Each email must be unique
+    allowNull: false,
+    unique: true,
     validate: {
-      isEmail: true, // Sequelize will automatically validate the email format
+      isEmail: true,
     },
   },
-  // API_CONTRACT'a göre eklendi
   username: {
     type: DataTypes.STRING(50),
     allowNull: false,
     unique: true,
   },
-  // API_CONTRACT'a göre password -> password_hash olarak güncellendi
   password_hash: {
     type: DataTypes.STRING(255),
     allowNull: false,
   },
+  bio: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  profilePicture: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+  },
 }, {
-  // Other model options
-  tableName: 'users', // Explicitly tell Sequelize the table name
-  timestamps: true, // Automatically manage createdAt and updatedAt columns
+  tableName: 'users',
+  timestamps: true,
 });
 
-// Export the model
 export default User;

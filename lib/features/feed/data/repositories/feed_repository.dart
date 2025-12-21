@@ -15,4 +15,22 @@ class FeedRepository {
       throw Exception('Feed getirme hatası: ${e.message}');
     }
   }
+
+  Future<Map<String, dynamic>> likeTodo(int todoId) async {
+    try {
+      final response = await _dio.post('/todos/$todoId/like');
+      return response.data['data'];
+    } on DioException catch (e) {
+      throw Exception('Beğeni hatası: ${e.message}');
+    }
+  }
+
+  Future<Map<String, dynamic>> unlikeTodo(int todoId) async {
+    try {
+      final response = await _dio.delete('/todos/$todoId/like');
+      return response.data['data'];
+    } on DioException catch (e) {
+      throw Exception('Beğeni kaldırma hatası: ${e.message}');
+    }
+  }
 }

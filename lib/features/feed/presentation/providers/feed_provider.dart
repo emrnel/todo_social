@@ -41,6 +41,46 @@ class FeedNotifier extends StateNotifier<FeedState> {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
+
+  Future<void> toggleLike(int todoId) async {
+    final currentItem = state.feedItems.firstWhere(
+      (item) => item.id == todoId && item.type == 'todo',
+    );
+
+    final isCurrentlyLiked = currentItem.isLiked ?? false;
+
+    // Optimistic update
+    final updatedItems = state.feedItems.map((item) {
+      if (item.id == todoId && item.type == 'todo') {
+        return item.copyWith(
+          isLiked: !isCurrentlyLiked,
+          likeCount: isCurrentlyLiked
+              ? (item.likeCount ?? 1) - 1
+              : (item.likeCount ?? 0) + 1,
+        );
+      }
+      return item;
+    }).toList();
+
+    state = state.copyWith(feedItems: updatedItems);
+
+    try {
+      if (isCurrentlyLiked) {
+        await _feedRepository.unlikeTodo(todoId);
+      } else {
+        await _feedRepository.likeTodo(todoId);
+      }
+      // Refresh feed to get accurate data
+      await fetchFeed();
+    } catch (e) {
+      // Revert on error
+      state = state.copyWith(
+        feedItems: state.feedItems,
+        errorMessage: e.toString(),
+      );
+      rethrow;
+    }
+  }
 }
 
 final feedRepositoryProvider = Provider<FeedRepository>((ref) {

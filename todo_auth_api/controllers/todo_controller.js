@@ -1,32 +1,8 @@
 import Todo from '../models/Todo.js';
 import Routine from '../models/Routine.js';
+import TodoLike from '../models/TodoLike.js';
+import User from '../models/User.js';
 import { validationResult } from 'express-validator';
-
-/**
- * Helper function to check if a routine should appear today
- * @param {Routine} routine - The routine object
- * @returns {boolean} - Whether routine should appear today
- */
-const shouldShowRoutineToday = (routine) => {
-  const today = new Date();
-  const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase(); // 'mon', 'tue', etc.
-
-  if (routine.recurrenceType === 'daily') {
-    return true;
-  }
-
-  if (routine.recurrenceType === 'weekly' && routine.recurrenceValue) {
-    try {
-      const days = JSON.parse(routine.recurrenceValue);
-      return Array.isArray(days) && days.includes(dayOfWeek);
-    } catch (e) {
-      console.error('Error parsing recurrenceValue:', e);
-      return false;
-    }
-  }
-
-  return false;
-};
 
 /**
  * @name   getMyTodos
@@ -38,11 +14,17 @@ export const getMyTodos = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Find all todos and routines for this user in parallel
     const [todos, routines] = await Promise.all([
       Todo.findAll({
         where: { userId: userId },
         order: [['createdAt', 'DESC']],
+        include: [
+          {
+            model: User,
+            as: 'originalAuthor',
+            attributes: ['id', 'username'],
+          },
+        ],
       }),
       Routine.findAll({
         where: { userId: userId },
@@ -50,13 +32,27 @@ export const getMyTodos = async (req, res) => {
       }),
     ]);
 
-    // Return separate arrays for todos and routines
-    // Frontend will handle filtering routines based on today
+    // Check if user liked each todo
+    const todosWithLikes = await Promise.all(
+      todos.map(async (todo) => {
+        const isLiked = await TodoLike.findOne({
+          where: { userId: userId, todoId: todo.id },
+        });
+        
+        const todoJson = todo.toJSON();
+        return {
+          ...todoJson,
+          isLiked: !!isLiked,
+          originalAuthor: todoJson.originalAuthor || null,
+        };
+      })
+    );
+
     return res.status(200).json({
       success: true,
       message: 'Kullanıcının yapılacaklar listesi başarıyla getirildi',
       data: {
-        todos: todos.map(t => t.toJSON()),
+        todos: todosWithLikes,
         routines: routines.map(r => r.toJSON()),
       },
     });
@@ -201,6 +197,199 @@ export const deleteTodo = async (req, res) => {
     return res.status(200).json({ success: true, message: 'Görev silindi' });
   } catch (error) {
     console.error('Delete Todo Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message,
+      error: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+  }
+};
+
+/**
+ * @name   likeTodo
+ * @desc   Like a todo
+ * @route  POST /api/todos/:id/like
+ * @access Private
+ */
+export const likeTodo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const todo = await Todo.findByPk(id);
+
+    if (!todo) {
+      return res.status(404).json({
+        success: false,
+        message: 'Görev bulunamadı',
+        error: { code: 'TODO_NOT_FOUND' },
+      });
+    }
+
+    // Check if already liked
+    const existingLike = await TodoLike.findOne({
+      where: { userId, todoId: id },
+    });
+
+    if (existingLike) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bu görevi zaten beğendiniz',
+        error: { code: 'ALREADY_LIKED' },
+      });
+    }
+
+    // Create like
+    await TodoLike.create({ userId, todoId: id });
+
+    // Increment like count
+    await todo.update({ likeCount: todo.likeCount + 1 });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Görev beğenildi',
+      data: { likeCount: todo.likeCount + 1 },
+    });
+  } catch (error) {
+    console.error('Like Todo Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message,
+      error: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+  }
+};
+
+/**
+ * @name   unlikeTodo
+ * @desc   Unlike a todo
+ * @route  DELETE /api/todos/:id/like
+ * @access Private
+ */
+export const unlikeTodo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const todo = await Todo.findByPk(id);
+
+    if (!todo) {
+      return res.status(404).json({
+        success: false,
+        message: 'Görev bulunamadı',
+        error: { code: 'TODO_NOT_FOUND' },
+      });
+    }
+
+    const existingLike = await TodoLike.findOne({
+      where: { userId, todoId: id },
+    });
+
+    if (!existingLike) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bu görevi beğenmediniz',
+        error: { code: 'NOT_LIKED' },
+      });
+    }
+
+    await existingLike.destroy();
+
+    // Decrement like count
+    const newLikeCount = Math.max(0, todo.likeCount - 1);
+    await todo.update({ likeCount: newLikeCount });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Beğeni kaldırıldı',
+      data: { likeCount: newLikeCount },
+    });
+  } catch (error) {
+    console.error('Unlike Todo Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message,
+      error: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+  }
+};
+
+/**
+ * @name   copyTodo
+ * @desc   Copy a public todo to current user's list
+ * @route  POST /api/todos/:id/copy
+ * @access Private
+ */
+export const copyTodo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const originalTodo = await Todo.findByPk(id, {
+      include: [
+        {
+          model: User,
+          as: 'author',
+          attributes: ['id', 'username'],
+        },
+      ],
+    });
+
+    if (!originalTodo) {
+      return res.status(404).json({
+        success: false,
+        message: 'Görev bulunamadı',
+        error: { code: 'TODO_NOT_FOUND' },
+      });
+    }
+
+    if (!originalTodo.isPublic) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bu görev herkese açık değil',
+        error: { code: 'NOT_PUBLIC' },
+      });
+    }
+
+    if (originalTodo.userId === userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Kendi görevinizi kopyalayamazsınız',
+        error: { code: 'CANNOT_COPY_OWN' },
+      });
+    }
+
+    // Determine the original author (if this is already a copy, use its original author)
+    const originalAuthorId = originalTodo.originalAuthorId || originalTodo.userId;
+
+    // Create copy
+    const copiedTodo = await Todo.create({
+      userId,
+      title: originalTodo.title,
+      description: originalTodo.description,
+      isPublic: false, // Copied todos are private by default
+      isCompleted: false,
+      originalAuthorId,
+    });
+
+    // Fetch with author info
+    const copiedTodoWithAuthor = await Todo.findByPk(copiedTodo.id, {
+      include: [
+        {
+          model: User,
+          as: 'originalAuthor',
+          attributes: ['id', 'username'],
+        },
+      ],
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Görev kopyalandı',
+      data: { todo: copiedTodoWithAuthor },
+    });
+  } catch (error) {
+    console.error('Copy Todo Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Sunucu hatası: ' + error.message,
