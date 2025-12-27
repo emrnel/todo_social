@@ -3,6 +3,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// DEBUG: URL'i görelim
+console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL);
+console.log('🔍 .env yolu:', process.cwd());
+
 // Railway PostgreSQL ile bağlan
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',
@@ -12,7 +16,7 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
       rejectUnauthorized: false
     }
   },
-  logging: false
+  logging: console.log  // SQL sorgularını göster
 });
 
 export default sequelize;
