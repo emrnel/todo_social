@@ -1,15 +1,18 @@
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 
-// .env dosyasındaki ortam değişkenlerini yükle
 dotenv.config();
 
-// Initialize Sequelize with SQLite
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: './database.sqlite', // SQLite veritabanı dosyası
-  logging: false, // SQL loglarını kapat (debug için true yapabilirsiniz)
+// Railway PostgreSQL ile bağlan
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'postgres',
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
+    }
+  },
+  logging: false
 });
 
-// Export the sequelize instance
 export default sequelize;
