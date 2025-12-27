@@ -4,6 +4,7 @@ import {
   getMyRoutines,
   updateRoutine,
   deleteRoutine,
+  completeRoutine,
 } from '../controllers/routine.controller.js';
 import authMiddleware from '../controllers/auth.middleware.js';
 
@@ -39,5 +40,12 @@ router.patch('/:id', updateRoutine);
  * @access  Private
  */
 router.delete('/:id', deleteRoutine);
+
+/**
+ * @route   POST /api/routines/:id/complete
+ * @desc    Mark a routine as completed
+ * @access  Private
+ */
+router.post('/:id/complete', completeRoutine);
 
 export default router;

@@ -1,19 +1,22 @@
 // lib/features/home/presentation/screens/home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:todo_social/features/home/presentation/screens/my_todos_tab.dart';
 import 'package:todo_social/features/home/presentation/screens/feed_tab.dart';
 import 'package:todo_social/features/social/presentation/screens/search_screen.dart';
 import 'package:todo_social/features/social/presentation/screens/user_profile_screen.dart';
+import 'package:todo_social/features/gamification/providers/notification_provider.dart';
+import 'package:todo_social/core/navigation/routes.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
   final GlobalKey _fabKey = GlobalKey();
 
@@ -35,9 +38,52 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final notificationState = ref.watch(notificationProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_currentIndex]),
+        actions: [
+          // Notifications icon with badge
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined),
+                onPressed: () => context.push(Routes.notifications),
+              ),
+              if (notificationState.unreadCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '${notificationState.unreadCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          // Leaderboard icon
+          IconButton(
+            icon: const Icon(Icons.leaderboard),
+            onPressed: () => context.push(Routes.leaderboard),
+          ),
+        ],
       ),
       body: IndexedStack(
         index: _currentIndex,

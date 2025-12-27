@@ -8,6 +8,7 @@ class RoutineModel {
   final String? recurrenceValue; // Örn: "[\"mon\",\"wed\"]"
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final bool isCompletedToday;
 
   RoutineModel({
     required this.id,
@@ -19,6 +20,7 @@ class RoutineModel {
     this.recurrenceValue,
     this.createdAt,
     this.updatedAt,
+    this.isCompletedToday = false,
   });
 
   factory RoutineModel.fromJson(Map<String, dynamic> json) {
@@ -36,6 +38,7 @@ class RoutineModel {
           json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt:
           json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      isCompletedToday: json['isCompletedToday'] == true || json['isCompletedToday'] == 1,
     );
   }
 
@@ -50,6 +53,7 @@ class RoutineModel {
       'recurrenceValue': recurrenceValue,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'isCompletedToday': isCompletedToday,
     };
   }
 }

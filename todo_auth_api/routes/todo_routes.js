@@ -8,6 +8,7 @@ import {
   likeTodo,
   unlikeTodo,
   copyTodo,
+  getTodoLikes,
 } from '../controllers/todo_controller.js';
 import authMiddleware from '../controllers/auth.middleware.js';
 
@@ -30,6 +31,7 @@ router.delete('/:id', deleteTodo);
 // Like/Unlike routes
 router.post('/:id/like', likeTodo);
 router.delete('/:id/like', unlikeTodo);
+router.get('/:id/likes', getTodoLikes);
 
 // Copy route
 router.post('/:id/copy', copyTodo);

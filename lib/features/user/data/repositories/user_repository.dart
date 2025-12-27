@@ -43,6 +43,7 @@ class UserRepository {
         'user': UserModel.fromJson(data['user']),
         'followerCount': _parseCount(data['followerCount']),
         'followingCount': _parseCount(data['followingCount']),
+        'publicTodos': data['publicTodos'] ?? [],
       };
     } on DioException catch (e) {
       throw Exception('Profil getirme hatası: ${e.message}');

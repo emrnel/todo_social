@@ -47,29 +47,20 @@ class TodoProvider extends StateNotifier<TodoState> {
     try {
       final data = await _repository.getMyTodos();
 
-      print('DEBUG: Backend response: $data');
+      final todos = (data['todos'] as List<dynamic>? ?? [])
+          .map((json) => TodoModel.fromJson(json))
+          .toList();
 
-      final todos = (data['todos'] as List<dynamic>? ?? []).map((json) {
-        print('DEBUG: Parsing todo: $json');
-        return TodoModel.fromJson(json);
-      }).toList();
-
-      final routines = (data['routines'] as List<dynamic>? ?? []).map((json) {
-        print('DEBUG: Parsing routine: $json');
-        return RoutineModel.fromJson(json);
-      }).toList();
-
-      print(
-          'DEBUG: Parsed ${todos.length} todos and ${routines.length} routines');
+      final routines = (data['routines'] as List<dynamic>? ?? [])
+          .map((json) => RoutineModel.fromJson(json))
+          .toList();
 
       state = state.copyWith(
         todos: todos,
         routines: routines,
         isLoading: false,
       );
-    } catch (e, stackTrace) {
-      print('DEBUG: Error fetching todos: $e');
-      print('DEBUG: Stack trace: $stackTrace');
+    } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
@@ -78,6 +69,7 @@ class TodoProvider extends StateNotifier<TodoState> {
     String title, {
     String? description,
     bool isPublic = false,
+    int? categoryId,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -85,6 +77,7 @@ class TodoProvider extends StateNotifier<TodoState> {
         title,
         description: description,
         isPublic: isPublic,
+        categoryId: categoryId,
       );
       state = state.copyWith(
         todos: [newTodo, ...state.todos],

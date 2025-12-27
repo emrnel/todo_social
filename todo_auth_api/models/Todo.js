@@ -43,6 +43,28 @@ const Todo = sequelize.define('Todo', {
       key: 'id',
     },
   },
+  categoryId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'categories',
+      key: 'id',
+    },
+  },
+  completedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Timestamp when the todo was completed',
+  },
+  commentCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  copyCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    comment: 'Number of times this todo has been copied',
+  },
 }, {
   tableName: 'todos',
   timestamps: true,

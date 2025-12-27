@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 import 'package:todo_social/core/navigation/routes.dart';
+import 'package:todo_social/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -58,23 +59,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0D47A1), Color(0xFF42A5F5)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+          gradient: AppColors.primaryGradient,
         ),
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
+                const Icon(
+                  Icons.checklist_rounded,
+                  size: 80,
+                  color: Colors.white,
+                ),
+                const SizedBox(height: 16),
                 const Text(
                   "Todo Social",
                   style: TextStyle(
                     fontSize: 42,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
+                    letterSpacing: -1,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Görevlerini paylaş, ilham al",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -99,14 +112,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       children: [
                         TextFormField(
                           controller: _emailController,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: "E-posta",
                             hintText: "ornek@mail.com",
-                            prefixIcon: const Icon(Icons.email_outlined,
-                                color: Colors.blue),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            prefixIcon: Icon(Icons.email_outlined),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -125,11 +134,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             labelText: "Şifre",
-                            prefixIcon: const Icon(Icons.lock_outline,
-                                color: Colors.blue),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
@@ -155,16 +160,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ElevatedButton(
                           onPressed: authState.isLoading ? null : _login,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(0, 50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            minimumSize: const Size(0, 56),
                           ),
                           child: authState.isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white)
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
                               : const Text("Giriş Yap",
                                   style: TextStyle(fontSize: 18)),
                         ),
@@ -173,7 +179,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           onPressed: () => context.go(Routes.register),
                           child: const Text(
                             "Hesabın yok mu? Kayıt ol",
-                            style: TextStyle(color: Colors.blue),
                           ),
                         ),
                       ],

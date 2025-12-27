@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_social/core/navigation/app_router.dart';
+import 'package:todo_social/core/theme/app_theme.dart';
 
 // Root widget now reads the GoRouter from Riverpod and provides it to
 // the MaterialApp.router so `GoRouter.of(context)` is available.
@@ -15,11 +16,7 @@ class App extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Todo Social',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
+      theme: AppTheme.lightTheme,
       // Provide the GoRouter to MaterialApp
       routerDelegate: router.routerDelegate,
       routeInformationParser: router.routeInformationParser,

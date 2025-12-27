@@ -15,7 +15,6 @@ class MyTodosTab extends ConsumerStatefulWidget {
 
 class _MyTodosTabState extends ConsumerState<MyTodosTab> {
   bool _loaded = false;
-  bool _showCompleted = false;
 
   @override
   void didChangeDependencies() {
@@ -34,9 +33,8 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
     final List<TodoModel> allTodos = todoState.todos;
     final List<RoutineModel> routines = todoState.routines;
 
-    // Separate completed and active todos
+    // Only show active todos (completed todos are now in profile)
     final activeTodos = allTodos.where((t) => !t.isCompleted).toList();
-    final completedTodos = allTodos.where((t) => t.isCompleted).toList();
 
     if (todoState.isLoading && allTodos.isEmpty && routines.isEmpty) {
       return const Center(child: CircularProgressIndicator());
@@ -94,6 +92,30 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Info card about completed todos in profile
+          Card(
+            color: Colors.blue.shade50,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue.shade700),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Tamamlanan görevlerinizi profil sayfanızda görebilirsiniz',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.blue.shade900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
           // Active todos and routines
           ...activeItems.map((data) {
             if (data['kind'] == 'routine') {
@@ -104,30 +126,6 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
               return _buildTodoCard(t, context);
             }
           }),
-
-          // Completed section
-          if (completedTodos.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Card(
-              color: Colors.grey.shade100,
-              child: ExpansionTile(
-                leading: const Icon(Icons.check_circle, color: Colors.green),
-                title: Text(
-                  'Tamamlananlar (${completedTodos.length})',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                initiallyExpanded: _showCompleted,
-                onExpansionChanged: (expanded) {
-                  setState(() {
-                    _showCompleted = expanded;
-                  });
-                },
-                children: completedTodos
-                    .map((todo) => _buildTodoCard(todo, context))
-                    .toList(),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -149,16 +147,8 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
         child: const Icon(Icons.info, color: Colors.white),
       ),
       confirmDismiss: (_) async {
-        // Rutinler silinemez veya tamamlanamaz - sadece bilgi göster
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Rutinler ${r.recurrenceType} olarak tekrar eden görevlerdir. Silmek veya tamamlamak için rutinler sayfasına gidin.',
-            ),
-            duration: const Duration(seconds: 3),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        // Navigate to routines screen
+        context.push(Routes.routines);
         return false;
       },
       child: Card(
@@ -286,6 +276,39 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Category badge
+                        if (t.category != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: t.category!.color != null
+                                    ? Color(int.parse(t.category!.color!.replaceFirst('#', '0xFF')))
+                                        .withOpacity(0.15)
+                                    : Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (t.category!.icon != null)
+                                    Text(t.category!.icon!, style: const TextStyle(fontSize: 12)),
+                                  if (t.category!.icon != null) const SizedBox(width: 3),
+                                  Text(
+                                    t.category!.name,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: t.category!.color != null
+                                          ? Color(int.parse(t.category!.color!.replaceFirst('#', '0xFF')))
+                                          : Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         Text(
                           t.title,
                           style: TextStyle(
@@ -305,6 +328,32 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
                                 fontSize: 14,
                                 color: Colors.grey.shade700,
                               ),
+                            ),
+                          ),
+                        // Hashtags
+                        if (t.hashtags.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Wrap(
+                              spacing: 4,
+                              runSpacing: 3,
+                              children: t.hashtags.map((h) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '#${h.tag}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.blue.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           ),
                         // Show "from username" if copied

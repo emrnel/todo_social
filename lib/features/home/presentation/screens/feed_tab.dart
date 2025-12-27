@@ -6,6 +6,8 @@ import 'package:todo_social/features/feed/presentation/providers/feed_provider.d
 import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 import 'package:todo_social/features/social/presentation/providers/social_provider.dart';
 import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
+import 'package:todo_social/core/theme/app_colors.dart';
+import 'package:todo_social/features/social/presentation/widgets/comment_section.dart';
 
 enum FeedFilter { following, discover }
 
@@ -123,27 +125,40 @@ class _FeedTabState extends ConsumerState<FeedTab> {
           final isTodo = item.type == 'todo';
 
           return Card(
-            elevation: 2,
-            color: isTodo ? null : Colors.green.shade50,
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // User info header
-                  InkWell(
-                    onTap: () {
-                      context.push(Routes.userProfilePath(item.username));
-                    },
+            elevation: 3,
+            shadowColor: Colors.black.withOpacity(0.1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // User info header
+                InkWell(
+                  onTap: () {
+                    context.push(Routes.userProfilePath(item.username));
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          backgroundColor: isTodo ? Colors.teal : Colors.green,
-                          child: Text(
-                            item.username[0].toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: isTodo
+                                ? AppColors.primaryGradient
+                                : AppColors.successGradient,
+                            shape: BoxShape.circle,
+                          ),
+                          child: CircleAvatar(
+                            backgroundColor: Colors.transparent,
+                            radius: 20,
+                            child: Text(
+                              item.username[0].toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
                             ),
                           ),
                         ),
@@ -199,131 +214,213 @@ class _FeedTabState extends ConsumerState<FeedTab> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  // Content
-                  Text(
-                    item.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      decoration: (isTodo && item.isCompleted == true)
-                          ? TextDecoration.lineThrough
-                          : null,
-                    ),
-                  ),
-                  if (item.description != null && item.description!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        item.description!,
+                ),
+
+                // Content section
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      // Category badge
+                      if (item.category != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: item.category!.color != null
+                                  ? Color(int.parse(item.category!.color!.replaceFirst('#', '0xFF')))
+                                      .withOpacity(0.15)
+                                  : Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (item.category!.icon != null)
+                                  Text(item.category!.icon!, style: const TextStyle(fontSize: 14)),
+                                if (item.category!.icon != null) const SizedBox(width: 4),
+                                Text(
+                                  item.category!.name,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: item.category!.color != null
+                                        ? Color(int.parse(item.category!.color!.replaceFirst('#', '0xFF')))
+                                        : Colors.grey.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      Text(
+                        item.title,
                         style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          decoration: (isTodo && item.isCompleted == true)
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
                       ),
-                    ),
-                  // Show recurrence info for routines
-                  if (!isTodo && item.recurrenceType != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.repeat,
-                            size: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Tekrar: ${item.recurrenceType}',
+                      if (item.description != null && item.description!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            item.description!,
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  // Action buttons for todos
-                  if (isTodo) ...[
-                    const Divider(height: 24),
-                    Row(
-                      children: [
-                        // Like button
-                        IconButton(
-                          icon: Icon(
-                            item.isLiked == true
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color:
-                                item.isLiked == true ? Colors.red : Colors.grey,
-                          ),
-                          onPressed: () async {
-                            try {
-                              await ref
-                                  .read(feedProvider.notifier)
-                                  .toggleLike(item.id);
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Hata: ${e.toString()}'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                        ),
-                        if (item.likeCount != null && item.likeCount! > 0)
-                          Text(
-                            '${item.likeCount}',
-                            style: const TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade700,
                             ),
                           ),
-                        const SizedBox(width: 8),
-                        // Copy button
-                        IconButton(
-                          icon: const Icon(Icons.copy, color: Colors.blue),
-                          onPressed: () async {
-                            try {
-                              await ref
-                                  .read(todoProvider.notifier)
-                                  .copyTodo(item.id);
-
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Görev kopyalandı!'),
-                                    backgroundColor: Colors.green,
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Hata: ${e.toString()}'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            }
-                          },
                         ),
-                        const Text(
-                          'Kopyala',
-                          style: TextStyle(fontSize: 12),
+                      // Hashtags
+                      if (item.hashtags.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: item.hashtags.map((tag) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '#$tag',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.blue.shade700,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      // Show recurrence info for routines
+                      if (!isTodo && item.recurrenceType != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.repeat,
+                                size: 16,
+                                color: Colors.grey.shade600,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Tekrar: ${item.recurrenceType}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // Action buttons for todos
+                      if (isTodo) ...[
+                        const Divider(height: 24),
+                        Row(
+                          children: [
+                            // Like button
+                            IconButton(
+                              icon: Icon(
+                                item.isLiked == true
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: item.isLiked == true
+                                    ? AppColors.like
+                                    : Colors.grey,
+                              ),
+                              onPressed: () async {
+                                try {
+                                  await ref
+                                      .read(feedProvider.notifier)
+                                      .toggleLike(item.id);
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Hata: ${e.toString()}'),
+                                        backgroundColor: AppColors.error,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                            if (item.likeCount != null && item.likeCount! > 0)
+                              InkWell(
+                                onTap: () {
+                                  context.push(Routes.todoLikesPath(item.id));
+                                },
+                                child: Text(
+                                  '${item.likeCount} beğeni',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(width: 8),
+                            // Copy button
+                            IconButton(
+                              icon: Icon(Icons.copy, color: AppColors.share),
+                              onPressed: () async {
+                                try {
+                                  await ref
+                                      .read(todoProvider.notifier)
+                                      .copyTodo(item.id);
+
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text('Görev kopyalandı!'),
+                                        backgroundColor: AppColors.success,
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Hata: ${e.toString()}'),
+                                        backgroundColor: AppColors.error,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                            const Text(
+                              'Kopyala',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+
+                        // Comment section
+                        CommentSection(
+                          todoId: item.id,
+                          initialCommentCount: item.commentCount ?? 0,
                         ),
                       ],
-                    ),
-                  ],
-                ],
-              ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+              ],
             ),
           );
         },
