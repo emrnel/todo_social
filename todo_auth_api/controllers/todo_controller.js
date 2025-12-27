@@ -2,7 +2,12 @@ import Todo from '../models/Todo.js';
 import Routine from '../models/Routine.js';
 import TodoLike from '../models/TodoLike.js';
 import User from '../models/User.js';
+import Category from '../models/Category.js';
+import Hashtag from '../models/Hashtag.js';
 import { validationResult } from 'express-validator';
+import { processHashtags, calculateXP, addXP, updateStreak } from '../utils/helpers.js';
+import { createNotification } from './notification.controller.js';
+import { checkAndAwardBadges } from './badge.controller.js';
 
 /**
  * @name   getMyTodos
@@ -24,6 +29,17 @@ export const getMyTodos = async (req, res) => {
             as: 'originalAuthor',
             attributes: ['id', 'username'],
           },
+          {
+            model: Category,
+            as: 'category',
+            attributes: ['id', 'name', 'icon', 'color'],
+          },
+          {
+            model: Hashtag,
+            as: 'hashtags',
+            attributes: ['id', 'tag'],
+            through: { attributes: [] },
+          },
         ],
       }),
       Routine.findAll({
@@ -38,7 +54,7 @@ export const getMyTodos = async (req, res) => {
         const isLiked = await TodoLike.findOne({
           where: { userId: userId, todoId: todo.id },
         });
-        
+
         const todoJson = todo.toJSON();
         return {
           ...todoJson,
@@ -86,7 +102,7 @@ export const createTodo = async (req, res) => {
   }
 
   try {
-    const { title, description, isPublic } = req.body;
+    const { title, description, isPublic, categoryId } = req.body;
     const userId = req.user.id;
 
     const newTodo = await Todo.create({
@@ -94,12 +110,42 @@ export const createTodo = async (req, res) => {
       title,
       description: description || null,
       isPublic: isPublic || false,
+      categoryId: categoryId || null,
+    });
+
+    // Process hashtags from title and description
+    const textForHashtags = `${title} ${description || ''}`;
+    await processHashtags(newTodo.id, textForHashtags);
+
+    // Award XP for creating public todo
+    if (isPublic) {
+      const user = await User.findByPk(userId);
+      const xpGained = calculateXP('todo_created_public');
+      await addXP(user, xpGained);
+      await checkAndAwardBadges(userId);
+    }
+
+    // Fetch todo with all relations
+    const todoWithRelations = await Todo.findByPk(newTodo.id, {
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'icon', 'color'],
+        },
+        {
+          model: Hashtag,
+          as: 'hashtags',
+          attributes: ['id', 'tag'],
+          through: { attributes: [] },
+        },
+      ],
     });
 
     return res.status(201).json({
       success: true,
       message: 'Görev oluşturuldu',
-      data: { todo: newTodo },
+      data: { todo: todoWithRelations },
     });
   } catch (error) {
     console.error('Create Todo Error:', error);
@@ -121,7 +167,7 @@ export const updateTodo = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    const { title, description, isCompleted, isPublic } = req.body;
+    const { title, description, isCompleted, isPublic, categoryId } = req.body;
 
     const todo = await Todo.findByPk(id);
 
@@ -141,17 +187,63 @@ export const updateTodo = async (req, res) => {
       });
     }
 
+    const wasCompleted = todo.isCompleted;
+    const nowCompleted = isCompleted !== undefined ? isCompleted : todo.isCompleted;
+
     const updatedTodo = await todo.update({
       title: title !== undefined ? title : todo.title,
       description: description !== undefined ? description : todo.description,
-      isCompleted: isCompleted !== undefined ? isCompleted : todo.isCompleted,
+      isCompleted: nowCompleted,
       isPublic: isPublic !== undefined ? isPublic : todo.isPublic,
+      categoryId: categoryId !== undefined ? categoryId : todo.categoryId,
+      completedAt: nowCompleted && !wasCompleted ? new Date() : todo.completedAt,
+    });
+
+    // If todo was just completed, update streak and XP
+    if (!wasCompleted && nowCompleted) {
+      const user = await User.findByPk(userId);
+
+      // Update streak
+      await updateStreak(user);
+
+      // Award XP
+      const xpGained = calculateXP('todo_completed');
+      await addXP(user, xpGained);
+
+      // Increment todos completed count
+      await user.increment('todosCompletedCount');
+
+      // Check for new badges
+      await checkAndAwardBadges(userId);
+    }
+
+    // Re-process hashtags if title or description changed
+    if (title !== undefined || description !== undefined) {
+      const textForHashtags = `${updatedTodo.title} ${updatedTodo.description || ''}`;
+      await processHashtags(updatedTodo.id, textForHashtags);
+    }
+
+    // Fetch with relations
+    const todoWithRelations = await Todo.findByPk(updatedTodo.id, {
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'icon', 'color'],
+        },
+        {
+          model: Hashtag,
+          as: 'hashtags',
+          attributes: ['id', 'tag'],
+          through: { attributes: [] },
+        },
+      ],
     });
 
     return res.status(200).json({
       success: true,
       message: 'Görev güncellendi',
-      data: { todo: updatedTodo },
+      data: { todo: todoWithRelations },
     });
   } catch (error) {
     console.error('Update Todo Error:', error);
@@ -243,12 +335,29 @@ export const likeTodo = async (req, res) => {
     await TodoLike.create({ userId, todoId: id });
 
     // Increment like count
-    await todo.update({ likeCount: todo.likeCount + 1 });
+    const newLikeCount = todo.likeCount + 1;
+    await todo.update({ likeCount: newLikeCount });
+
+    // Create notification for todo author (if not liking own todo)
+    if (todo.userId !== userId) {
+      await createNotification({
+        userId: todo.userId,
+        actorId: userId,
+        type: 'like',
+        todoId: id,
+        message: 'görevinizi beğendi',
+      });
+
+      // Award XP to todo author
+      const author = await User.findByPk(todo.userId);
+      const xpGained = calculateXP('received_like');
+      await addXP(author, xpGained);
+    }
 
     return res.status(200).json({
       success: true,
       message: 'Görev beğenildi',
-      data: { likeCount: todo.likeCount + 1 },
+      data: { likeCount: newLikeCount },
     });
   } catch (error) {
     console.error('Like Todo Error:', error);
@@ -370,7 +479,29 @@ export const copyTodo = async (req, res) => {
       isPublic: false, // Copied todos are private by default
       isCompleted: false,
       originalAuthorId,
+      categoryId: originalTodo.categoryId,
     });
+
+    // Copy hashtags
+    const textForHashtags = `${originalTodo.title} ${originalTodo.description || ''}`;
+    await processHashtags(copiedTodo.id, textForHashtags);
+
+    // Increment copy count on original todo
+    await originalTodo.increment('copyCount');
+
+    // Create notification for original author
+    await createNotification({
+      userId: originalAuthorId,
+      actorId: userId,
+      type: 'todo_copied',
+      todoId: id,
+      message: 'görevinizi kopyaladı',
+    });
+
+    // Award XP to original author
+    const originalAuthor = await User.findByPk(originalAuthorId);
+    const xpGained = calculateXP('todo_copied_by_others');
+    await addXP(originalAuthor, xpGained);
 
     // Fetch with author info
     const copiedTodoWithAuthor = await Todo.findByPk(copiedTodo.id, {
@@ -379,6 +510,17 @@ export const copyTodo = async (req, res) => {
           model: User,
           as: 'originalAuthor',
           attributes: ['id', 'username'],
+        },
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'icon', 'color'],
+        },
+        {
+          model: Hashtag,
+          as: 'hashtags',
+          attributes: ['id', 'tag'],
+          through: { attributes: [] },
         },
       ],
     });
@@ -390,6 +532,53 @@ export const copyTodo = async (req, res) => {
     });
   } catch (error) {
     console.error('Copy Todo Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message,
+      error: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+  }
+};
+
+/**
+ * @name   getTodoLikes  
+ * @desc   Get list of users who liked a todo
+ * @route  GET /api/todos/:id/likes
+ * @access Private
+ */
+export const getTodoLikes = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const todo = await Todo.findByPk(id);
+    if (!todo) {
+      return res.status(404).json({
+        success: false,
+        message: 'Görev bulunamadı',
+        error: { code: 'TODO_NOT_FOUND' },
+      });
+    }
+
+    const likes = await TodoLike.findAll({
+      where: { todoId: id },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username', 'profilePicture'],
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+    });
+
+    const users = likes.map((like) => like.user);
+
+    return res.status(200).json({
+      success: true,
+      data: { users, count: users.length },
+    });
+  } catch (error) {
+    console.error('Get Todo Likes Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Sunucu hatası: ' + error.message,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 import 'package:todo_social/core/navigation/routes.dart';
+import 'package:todo_social/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -75,26 +76,38 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0D47A1), Color(0xFF42A5F5)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+          gradient: AppColors.accentGradient,
         ),
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
+                const Icon(
+                  Icons.person_add_rounded,
+                  size: 80,
+                  color: Colors.white,
+                ),
+                const SizedBox(height: 16),
                 const Text(
                   "Hesap Oluştur",
                   style: TextStyle(
-                    fontSize: 35,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 42,
+                    fontWeight: FontWeight.w900,
                     color: Colors.white,
+                    letterSpacing: -1,
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 8),
+                const Text(
+                  "Topluluğa katıl, başarıya ulaş",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const SizedBox(height: 40),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 35),
@@ -119,8 +132,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           decoration: InputDecoration(
                             labelText: "E-posta",
                             hintText: "ornek@mail.com",
-                            prefixIcon: const Icon(Icons.email_outlined,
-                                color: Colors.blue),
+                            prefixIcon: const Icon(Icons.email_outlined),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -142,7 +154,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           decoration: InputDecoration(
                             labelText: "Kullanıcı Adı",
                             prefixIcon:
-                                const Icon(Icons.person, color: Colors.blue),
+                                const Icon(Icons.person),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -160,8 +172,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             labelText: "Şifre",
-                            prefixIcon: const Icon(Icons.lock_outline,
-                                color: Colors.blue),
+                            prefixIcon: const Icon(Icons.lock_outline),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -191,8 +202,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           obscureText: _obscurePasswordAgain,
                           decoration: InputDecoration(
                             labelText: "Şifre (Tekrar)",
-                            prefixIcon: const Icon(Icons.lock_reset,
-                                color: Colors.blue),
+                            prefixIcon: const Icon(Icons.lock_reset),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -221,16 +231,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ElevatedButton(
                           onPressed: authState.isLoading ? null : _register,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(0, 50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            minimumSize: const Size(0, 56),
                           ),
                           child: authState.isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white)
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
                               : const Text("Kayıt Ol",
                                   style: TextStyle(fontSize: 18)),
                         ),
@@ -239,7 +250,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           onPressed: () => context.go(Routes.login),
                           child: const Text(
                             "Zaten hesabın var mı? Giriş yap",
-                            style: TextStyle(color: Colors.blue),
                           ),
                         ),
                       ],

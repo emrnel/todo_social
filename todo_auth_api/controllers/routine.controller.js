@@ -1,5 +1,7 @@
 import Routine from '../models/Routine.js';
+import RoutineCompletion from '../models/RoutineCompletion.js';
 import { validationResult } from 'express-validator';
+import { Op } from 'sequelize';
 
 /**
  * @name   createRoutine
@@ -54,7 +56,7 @@ export const createRoutine = async (req, res) => {
 
 /**
  * @name   getMyRoutines
- * @desc   Get all routines for the logged-in user
+ * @desc   Get all routines for the logged-in user with completion status
  * @route  GET /api/routines/myroutines
  * @access Private
  */
@@ -67,11 +69,22 @@ export const getMyRoutines = async (req, res) => {
       order: [['createdAt', 'DESC']],
     });
 
+    // Check completion status for each routine
+    const routinesWithCompletion = await Promise.all(
+      routines.map(async (routine) => {
+        const isCompletedToday = await checkRoutineCompletedToday(routine.id, userId, routine.recurrenceType);
+        return {
+          ...routine.toJSON(),
+          isCompletedToday,
+        };
+      })
+    );
+
     return res.status(200).json({
       success: true,
       message: 'Rutinler başarıyla getirildi',
       data: {
-        routines,
+        routines: routinesWithCompletion,
       },
     });
   } catch (error) {
@@ -82,6 +95,41 @@ export const getMyRoutines = async (req, res) => {
       error: { code: 'INTERNAL_SERVER_ERROR' },
     });
   }
+};
+
+/**
+ * Helper function to check if routine is completed for current period
+ */
+const checkRoutineCompletedToday = async (routineId, userId, recurrenceType) => {
+  const now = new Date();
+  let startDate;
+
+  if (recurrenceType === 'daily') {
+    // Check if completed today
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (recurrenceType === 'weekly') {
+    // Check if completed this week (week starts on Monday)
+    const dayOfWeek = now.getDay();
+    const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust for Monday start
+    startDate = new Date(now);
+    startDate.setDate(now.getDate() - diff);
+    startDate.setHours(0, 0, 0, 0);
+  } else {
+    // For custom recurrence, check today
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  const completion = await RoutineCompletion.findOne({
+    where: {
+      routineId,
+      userId,
+      completedAt: {
+        [Op.gte]: startDate,
+      },
+    },
+  });
+
+  return !!completion;
 };
 
 /**
@@ -179,6 +227,73 @@ export const deleteRoutine = async (req, res) => {
     });
   } catch (error) {
     console.error('Delete Routine Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message,
+      error: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+  }
+};
+
+/**
+ * @name   completeRoutine
+ * @desc   Mark a routine as completed for the current period
+ * @route  POST /api/routines/:id/complete
+ * @access Private
+ */
+export const completeRoutine = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const routine = await Routine.findByPk(id);
+
+    if (!routine) {
+      return res.status(404).json({
+        success: false,
+        message: 'Rutin bulunamadı',
+        error: { code: 'ROUTINE_NOT_FOUND' },
+      });
+    }
+
+    if (routine.userId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bu rutini tamamlama yetkiniz yok',
+        error: { code: 'FORBIDDEN' },
+      });
+    }
+
+    // Check if already completed for this period
+    const isAlreadyCompleted = await checkRoutineCompletedToday(id, userId, routine.recurrenceType);
+
+    if (isAlreadyCompleted) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bu rutin bu dönem için zaten tamamlanmış',
+        error: { code: 'ALREADY_COMPLETED' },
+      });
+    }
+
+    // Create completion record
+    await RoutineCompletion.create({
+      routineId: id,
+      userId,
+      completedAt: new Date(),
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Rutin tamamlandı',
+      data: {
+        routine: {
+          ...routine.toJSON(),
+          isCompletedToday: true,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Complete Routine Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Sunucu hatası: ' + error.message,

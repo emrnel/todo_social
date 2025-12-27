@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo Social - Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #667eea;
+            font-size: 1.5em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .btn-refresh {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .btn-refresh:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+
+        .truncate {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Todo Social - Admin Panel</h1>
+
+        <button class="btn-refresh" onclick="loadData()">🔄 Yenile</button>
+
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <h3 id="totalUsers">-</h3>
+                <p>Toplam Kullanıcı</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalTodos">-</h3>
+                <p>Toplam Görev</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="completedTodos">-</h3>
+                <p>Tamamlanan</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalLikes">-</h3>
+                <p>Toplam Beğeni</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalRoutines">-</h3>
+                <p>Toplam Rutin</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalFollows">-</h3>
+                <p>Toplam Takip</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>👥 Kullanıcılar</h2>
+            <div id="usersTable"></div>
+        </div>
+
+        <div class="section">
+            <h2>✅ Görevler</h2>
+            <div id="todosTable"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔁 Rutinler</h2>
+            <div id="routinesTable"></div>
+        </div>
+
+        <div class="section">
+            <h2>❤️ Beğeniler</h2>
+            <div id="likesTable"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔗 Takip İlişkileri</h2>
+            <div id="followsTable"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+
+        async function loadData() {
+            try {
+                const response = await fetch(`${API_URL}/admin/stats`);
+                const data = await response.json();
+
+                if (data.success) {
+                    updateStats(data.data);
+                    renderTables(data.data);
+                } else {
+                    showError('Veri yüklenirken hata oluştu');
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError('API bağlantısı kurulamadı. Backend çalışıyor mu?');
+            }
+        }
+
+        function updateStats(data) {
+            document.getElementById('totalUsers').textContent = data.users.length;
+            document.getElementById('totalTodos').textContent = data.todos.length;
+            document.getElementById('completedTodos').textContent =
+                data.todos.filter(t => t.isCompleted).length;
+            document.getElementById('totalLikes').textContent = data.likes.length;
+            document.getElementById('totalRoutines').textContent = data.routines.length;
+            document.getElementById('totalFollows').textContent = data.follows.length;
+        }
+
+        function renderTables(data) {
+            // Users Table
+            const usersHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Kullanıcı Adı</th>
+                            <th>Email</th>
+                            <th>Bio</th>
+                            <th>Kayıt Tarihi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.users.map(u => `
+                            <tr>
+                                <td>${u.id}</td>
+                                <td><strong>${u.username}</strong></td>
+                                <td>${u.email}</td>
+                                <td class="truncate">${u.bio || '-'}</td>
+                                <td>${new Date(u.createdAt).toLocaleString('tr-TR')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('usersTable').innerHTML = usersHTML;
+
+            // Todos Table
+            const todosHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Başlık</th>
+                            <th>Kullanıcı</th>
+                            <th>Durum</th>
+                            <th>Görünürlük</th>
+                            <th>Beğeni</th>
+                            <th>Tarih</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.todos.map(t => `
+                            <tr>
+                                <td>${t.id}</td>
+                                <td class="truncate"><strong>${t.title}</strong></td>
+                                <td>${t.userId}</td>
+                                <td>
+                                    <span class="badge ${t.isCompleted ? 'badge-success' : 'badge-warning'}">
+                                        ${t.isCompleted ? '✓ Tamamlandı' : '⏳ Devam Ediyor'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge ${t.isPublic ? 'badge-info' : 'badge-danger'}">
+                                        ${t.isPublic ? '🌍 Herkese Açık' : '🔒 Özel'}
+                                    </span>
+                                </td>
+                                <td>❤️ ${t.likeCount || 0}</td>
+                                <td>${new Date(t.createdAt).toLocaleString('tr-TR')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('todosTable').innerHTML = todosHTML;
+
+            // Routines Table
+            const routinesHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Başlık</th>
+                            <th>Kullanıcı</th>
+                            <th>Tekrar</th>
+                            <th>Görünürlük</th>
+                            <th>Tarih</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.routines.map(r => `
+                            <tr>
+                                <td>${r.id}</td>
+                                <td class="truncate"><strong>${r.title}</strong></td>
+                                <td>${r.userId}</td>
+                                <td><span class="badge badge-info">🔁 ${r.recurrenceType}</span></td>
+                                <td>
+                                    <span class="badge ${r.isPublic ? 'badge-info' : 'badge-danger'}">
+                                        ${r.isPublic ? '🌍 Herkese Açık' : '🔒 Özel'}
+                                    </span>
+                                </td>
+                                <td>${new Date(r.createdAt).toLocaleString('tr-TR')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('routinesTable').innerHTML = routinesHTML;
+
+            // Likes Table
+            const likesHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Kullanıcı ID</th>
+                            <th>Görev ID</th>
+                            <th>Tarih</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.likes.map(l => `
+                            <tr>
+                                <td>${l.id}</td>
+                                <td>${l.userId}</td>
+                                <td>${l.todoId}</td>
+                                <td>${new Date(l.createdAt).toLocaleString('tr-TR')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('likesTable').innerHTML = likesHTML;
+
+            // Follows Table
+            const followsHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Takip Eden</th>
+                            <th>Takip Edilen</th>
+                            <th>Tarih</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.follows.map(f => `
+                            <tr>
+                                <td>${f.id}</td>
+                                <td>${f.followerId}</td>
+                                <td>${f.followingId}</td>
+                                <td>${new Date(f.createdAt).toLocaleString('tr-TR')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('followsTable').innerHTML = followsHTML;
+        }
+
+        function showError(message) {
+            const errorDiv = `<div class="error">${message}</div>`;
+            document.getElementById('usersTable').innerHTML = errorDiv;
+        }
+
+        // Load data on page load
+        window.addEventListener('load', loadData);
+    </script>
+</body>
+</html>

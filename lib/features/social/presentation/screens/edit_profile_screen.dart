@@ -159,18 +159,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             Center(
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: _profilePictureController.text.isNotEmpty
-                        ? NetworkImage(_profilePictureController.text)
-                        : null,
-                    backgroundColor: Colors.teal,
-                    onBackgroundImageError: (_, __) {},
-                    child: _profilePictureController.text.isEmpty
-                        ? const Icon(Icons.person,
-                            size: 50, color: Colors.white)
-                        : null,
-                  ),
+                  _profilePictureController.text.isNotEmpty
+                      ? CircleAvatar(
+                          radius: 50,
+                          backgroundImage:
+                              NetworkImage(_profilePictureController.text),
+                          backgroundColor: Colors.teal,
+                          onBackgroundImageError: (_, __) {},
+                        )
+                      : const CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.teal,
+                          child: Icon(Icons.person,
+                              size: 50, color: Colors.white),
+                        ),
                   const SizedBox(height: 16),
                   // Gallery pick button
                   ElevatedButton.icon(

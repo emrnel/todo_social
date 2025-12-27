@@ -3,7 +3,9 @@ import Todo from '../models/Todo.js';
 import Routine from '../models/Routine.js';
 import Follow from '../models/Follow.js';
 import TodoLike from '../models/TodoLike.js';
+import Comment from '../models/Comment.js';
 import { Op } from 'sequelize';
+import { createNotification } from './notification.controller.js';
 
 /**
  * @name   followUser
@@ -34,6 +36,18 @@ export const followUser = async (req, res) => {
 
     await currentUser.addFollowing(userToFollow);
 
+    // Create notification for the followed user
+    await createNotification({
+      userId: followingId,
+      actorId: followerId,
+      type: 'follow',
+      message: 'seni takip etmeye başladı',
+    });
+
+    // Update follower counts
+    await userToFollow.increment('followersCount');
+    await currentUser.increment('followingCount');
+
     res.status(200).json({ success: true, message: `Kullanıcı başarıyla takip edildi: ${userToFollow.username}` });
   } catch (error) {
     console.error('Follow User Error:', error);
@@ -61,6 +75,10 @@ export const unfollowUser = async (req, res) => {
     }
 
     await currentUser.removeFollowing(userToUnfollow);
+
+    // Update follower counts
+    await userToUnfollow.decrement('followersCount');
+    await currentUser.decrement('followingCount');
 
     res.status(200).json({ success: true, message: 'Kullanıcı takipten çıkarıldı.' });
   } catch (error) {
@@ -112,12 +130,17 @@ export const getFeed = async (req, res) => {
       }),
     ]);
 
-    // Check likes for todos
+    // Check likes and comment counts for todos
     const todosWithLikes = await Promise.all(
       feedTodos.map(async (todo) => {
-        const isLiked = await TodoLike.findOne({
-          where: { userId: userId, todoId: todo.id },
-        });
+        const [isLiked, commentCount] = await Promise.all([
+          TodoLike.findOne({
+            where: { userId: userId, todoId: todo.id },
+          }),
+          Comment.count({
+            where: { todoId: todo.id },
+          }),
+        ]);
 
         return {
           id: todo.id,
@@ -128,6 +151,7 @@ export const getFeed = async (req, res) => {
           isCompleted: todo.isCompleted,
           isPublic: todo.isPublic,
           likeCount: todo.likeCount || 0,
+          commentCount: commentCount || 0,
           isLiked: !!isLiked,
           createdAt: todo.createdAt,
           type: 'todo',

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
+import 'package:todo_social/features/gamification/providers/category_provider.dart';
+import 'package:todo_social/data/models/category_model.dart';
 
 class AddTodoScreen extends ConsumerStatefulWidget {
   const AddTodoScreen({super.key});
@@ -16,6 +18,7 @@ class _AddTodoScreenState extends ConsumerState<AddTodoScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   bool _isPublic = false;
+  CategoryModel? _selectedCategory;
 
   @override
   void dispose() {
@@ -58,7 +61,49 @@ class _AddTodoScreenState extends ConsumerState<AddTodoScreen> {
                 ),
                 maxLines: 5,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+              // Category Selector
+              Consumer(
+                builder: (context, ref, child) {
+                  final categoriesAsync = ref.watch(categoriesProvider);
+                  return categoriesAsync.when(
+                    data: (categories) {
+                      if (categories.isEmpty) return const SizedBox.shrink();
+                      return DropdownButtonFormField<CategoryModel>(
+                        decoration: const InputDecoration(
+                          labelText: 'Kategori (Opsiyonel)',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.category),
+                        ),
+                        value: _selectedCategory,
+                        hint: const Text('Kategori seçin'),
+                        items: categories.map((category) {
+                          return DropdownMenuItem<CategoryModel>(
+                            value: category,
+                            child: Row(
+                              children: [
+                                if (category.icon != null) ...[
+                                  Text(category.icon!, style: const TextStyle(fontSize: 16)),
+                                  const SizedBox(width: 8),
+                                ],
+                                Text(category.name),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (CategoryModel? newValue) {
+                          setState(() {
+                            _selectedCategory = newValue;
+                          });
+                        },
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
               SwitchListTile(
                 value: _isPublic,
                 onChanged: (v) => setState(() => _isPublic = v),
@@ -78,6 +123,7 @@ class _AddTodoScreenState extends ConsumerState<AddTodoScreen> {
                                   ? null
                                   : _descriptionController.text.trim(),
                           isPublic: _isPublic,
+                          categoryId: _selectedCategory?.id,
                         );
                     if (!mounted) return;
                     final state = ref.read(todoProvider);

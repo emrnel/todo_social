@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import Todo from '../models/Todo.js';
 import TodoLike from '../models/TodoLike.js';
+import Comment from '../models/Comment.js';
 import { Op } from 'sequelize';
 import Follow from '../models/Follow.js';
 
@@ -29,6 +30,46 @@ export const getMe = async (req, res) => {
     const followerCount = parseInt(await user.countFollowers(), 10) || 0;
     const followingCount = parseInt(await user.countFollowing(), 10) || 0;
 
+    // Get all public todos (both active and completed) for profile display
+    const publicTodos = await Todo.findAll({
+      where: {
+        userId: user.id,
+        isPublic: true,
+      },
+      attributes: ['id', 'title', 'description', 'isCompleted', 'likeCount', 'createdAt', 'updatedAt'],
+      order: [['createdAt', 'DESC']],
+      limit: 100,
+      include: [
+        {
+          model: User,
+          as: 'originalAuthor',
+          attributes: ['id', 'username'],
+        },
+      ],
+    });
+
+    // Check if current user liked each todo and get comment count
+    const todosWithLikes = await Promise.all(
+      publicTodos.map(async (todo) => {
+        const [isLiked, commentCount] = await Promise.all([
+          TodoLike.findOne({
+            where: { userId: userId, todoId: todo.id },
+          }),
+          Comment.count({
+            where: { todoId: todo.id },
+          }),
+        ]);
+
+        const todoJson = todo.toJSON();
+        return {
+          ...todoJson,
+          isLiked: !!isLiked,
+          commentCount: commentCount || 0,
+          originalAuthor: todoJson.originalAuthor || null,
+        };
+      })
+    );
+
     return res.status(200).json({
       success: true,
       message: 'Profil bilgileri başarıyla getirildi',
@@ -39,10 +80,22 @@ export const getMe = async (req, res) => {
           email: user.email,
           bio: user.bio,
           profilePicture: user.profilePicture,
+          bannerPicture: user.bannerPicture,
+          theme: user.theme,
+          themeColor: user.themeColor,
+          xp: user.xp,
+          level: user.level,
+          currentStreak: user.currentStreak,
+          longestStreak: user.longestStreak,
+          lastActivityDate: user.lastActivityDate,
+          todosCompletedCount: user.todosCompletedCount,
+          followersCount: user.followersCount,
+          followingCount: user.followingCount,
           createdAt: user.createdAt,
         },
         followerCount,
         followingCount,
+        publicTodos: todosWithLikes,
       },
     });
   } catch (error) {
@@ -189,17 +242,23 @@ export const getUserProfile = async (req, res) => {
       ],
     });
 
-    // Check if current user liked each todo
+    // Check if current user liked each todo and get comment count
     const todosWithLikes = await Promise.all(
       publicTodos.map(async (todo) => {
-        const isLiked = await TodoLike.findOne({
-          where: { userId: currentUserId, todoId: todo.id },
-        });
-        
+        const [isLiked, commentCount] = await Promise.all([
+          TodoLike.findOne({
+            where: { userId: currentUserId, todoId: todo.id },
+          }),
+          Comment.count({
+            where: { todoId: todo.id },
+          }),
+        ]);
+
         const todoJson = todo.toJSON();
         return {
           ...todoJson,
           isLiked: !!isLiked,
+          commentCount: commentCount || 0,
           originalAuthor: todoJson.originalAuthor || null,
         };
       })

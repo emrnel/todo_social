@@ -14,6 +14,12 @@ import 'package:todo_social/features/social/presentation/screens/user_profile_sc
 import 'package:todo_social/features/social/presentation/screens/search_screen.dart';
 import 'package:todo_social/features/todo/presentation/screens/add_todo_screen.dart';
 import 'package:todo_social/features/routine/presentation/screens/add_routine_screen.dart';
+import 'package:todo_social/features/routine/presentation/screens/routines_screen.dart';
+import 'package:todo_social/features/gamification/screens/notifications_screen.dart';
+import 'package:todo_social/features/gamification/screens/statistics_screen.dart';
+import 'package:todo_social/features/gamification/screens/badges_screen.dart';
+import 'package:todo_social/features/gamification/screens/leaderboard_screen.dart';
+import 'package:todo_social/features/todo/presentation/screens/todo_likes_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -50,6 +56,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.addRoutine,
         builder: (context, state) => const AddRoutineScreen(),
       ),
+      GoRoute(
+        path: Routes.routines,
+        builder: (context, state) => const RoutinesScreen(),
+      ),
       // FE-CORE-33: Add search route
       GoRoute(
         path: Routes.search,
@@ -64,6 +74,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
           // FE-CORE-38: Call UserProfileScreen with username
           return UserProfileScreen(username: username);
+        },
+      ),
+      // Gamification routes
+      GoRoute(
+        path: Routes.notifications,
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: Routes.statistics,
+        builder: (context, state) => const StatisticsScreen(),
+      ),
+      GoRoute(
+        path: Routes.badges,
+        builder: (context, state) => const BadgesScreen(),
+      ),
+      GoRoute(
+        path: Routes.leaderboard,
+        builder: (context, state) => const LeaderboardScreen(),
+      ),
+      // Todo routes
+      GoRoute(
+        path: Routes.todoLikes,
+        builder: (context, state) {
+          final idStr = state.pathParameters['id'];
+          final todoId = int.parse(idStr ?? '0');
+          return TodoLikesScreen(todoId: todoId);
         },
       ),
     ],

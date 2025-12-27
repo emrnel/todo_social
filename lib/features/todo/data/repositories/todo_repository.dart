@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:todo_social/data/models/todo_model.dart';
-import 'package:todo_social/data/models/routine_model.dart';
+import 'package:todo_social/data/models/user_model.dart';
 
 class TodoRepository {
   final Dio _dio;
@@ -26,7 +26,7 @@ class TodoRepository {
   }
 
   Future<TodoModel> addTodo(String title,
-      {String? description, bool isPublic = false}) async {
+      {String? description, bool isPublic = false, int? categoryId}) async {
     try {
       final response = await _dio.post(
         '/todos',
@@ -34,6 +34,7 @@ class TodoRepository {
           'title': title,
           'description': description,
           'isPublic': isPublic,
+          if (categoryId != null) 'categoryId': categoryId,
         },
       );
       return TodoModel.fromJson(response.data['data']['todo']);
@@ -100,6 +101,16 @@ class TodoRepository {
       return TodoModel.fromJson(response.data['data']['todo']);
     } on DioException catch (e) {
       throw Exception('Kopyalama hatası: ${e.message}');
+    }
+  }
+
+  Future<List<UserModel>> getTodoLikes(int todoId) async {
+    try {
+      final response = await _dio.get('/todos/$todoId/likes');
+      final List<dynamic> usersList = response.data['data']['users'] ?? [];
+      return usersList.map((json) => UserModel.fromJson(json)).toList();
+    } on DioException catch (e) {
+      throw Exception('Beğenileri getirme hatası: ${e.message}');
     }
   }
 }

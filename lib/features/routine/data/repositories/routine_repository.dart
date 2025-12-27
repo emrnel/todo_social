@@ -70,4 +70,13 @@ class RoutineRepository {
       throw Exception('Rutin silme hatası: ${e.message}');
     }
   }
+
+  Future<RoutineModel> completeRoutine(int routineId) async {
+    try {
+      final response = await _dio.post('/routines/$routineId/complete');
+      return RoutineModel.fromJson(response.data['data']['routine']);
+    } on DioException catch (e) {
+      throw Exception('Rutin tamamlama hatası: ${e.message}');
+    }
+  }
 }
