@@ -1,5 +1,9 @@
 // lib/core/api/api_constants.dart
 
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+
 class ApiConstants {
   // Railway Production Backend URL
 
