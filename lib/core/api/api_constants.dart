@@ -25,7 +25,7 @@ class ApiConstants {
     /* Use local backend for testing:
     return 'http://localhost:$_apiPort/api';
 
-    Uncomment to use local backend in debug mode:
+    Dynamic backend selection:
     if (kReleaseMode) {
       return _productionUrl;
     }
