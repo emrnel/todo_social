@@ -154,22 +154,37 @@ class TodoProvider extends StateNotifier<TodoState> {
   Future<void> toggleLike(int todoId) async {
     final originalTodos = state.todos;
 
-    final currentTodo = state.todos.firstWhere((todo) => todo.id == todoId);
+    // Use firstWhere with orElse to handle todos not in current list (e.g., from other user's profile)
+    final currentTodo = state.todos.firstWhere(
+      (todo) => todo.id == todoId,
+      orElse: () => TodoModel(
+        id: todoId,
+        userId: 0,
+        title: '',
+        isCompleted: false,
+        isPublic: true,
+        isLiked: false,
+        likeCount: 0,
+      ),
+    );
     final isCurrentlyLiked = currentTodo.isLiked;
 
-    // Optimistic update
-    final updatedTodos = state.todos.map((todo) {
-      if (todo.id == todoId) {
-        return todo.copyWith(
-          isLiked: !isCurrentlyLiked,
-          likeCount:
-              isCurrentlyLiked ? (todo.likeCount) - 1 : (todo.likeCount) + 1,
-        );
-      }
-      return todo;
-    }).toList();
+    // Optimistic update only if todo exists in current list
+    final todoExistsInList = state.todos.any((todo) => todo.id == todoId);
+    if (todoExistsInList) {
+      final updatedTodos = state.todos.map((todo) {
+        if (todo.id == todoId) {
+          return todo.copyWith(
+            isLiked: !isCurrentlyLiked,
+            likeCount:
+                isCurrentlyLiked ? (todo.likeCount) - 1 : (todo.likeCount) + 1,
+          );
+        }
+        return todo;
+      }).toList();
 
-    state = state.copyWith(todos: updatedTodos);
+      state = state.copyWith(todos: updatedTodos);
+    }
 
     try {
       if (isCurrentlyLiked) {
@@ -178,11 +193,15 @@ class TodoProvider extends StateNotifier<TodoState> {
         await _repository.likeTodo(todoId);
       }
     } catch (e) {
-      // Revert on error
-      state = state.copyWith(
-        todos: originalTodos,
-        errorMessage: e.toString(),
-      );
+      // Revert on error only if todo was in list
+      if (todoExistsInList) {
+        state = state.copyWith(
+          todos: originalTodos,
+          errorMessage: e.toString(),
+        );
+      } else {
+        state = state.copyWith(errorMessage: e.toString());
+      }
       rethrow;
     }
   }

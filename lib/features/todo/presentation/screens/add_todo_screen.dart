@@ -33,12 +33,13 @@ class _AddTodoScreenState extends ConsumerState<AddTodoScreen> {
       appBar: AppBar(
         title: const Text('Add Todo'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -142,6 +143,7 @@ class _AddTodoScreenState extends ConsumerState<AddTodoScreen> {
                 child: const Text('Save Todo'),
               ),
             ],
+            ),
           ),
         ),
       ),

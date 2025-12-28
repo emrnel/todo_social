@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:todo_social/core/api/api_service.dart';
+import 'package:todo_social/core/navigation/routes.dart';
 
 class FollowersListScreen extends ConsumerStatefulWidget {
   final int userId;
@@ -135,12 +137,8 @@ class _FollowersListScreenState extends ConsumerState<FollowersListScreen> {
                           ),
                           subtitle: user['bio'] != null ? Text(user['bio']) : null,
                           onTap: () {
-                            // Navigate to user profile
-                            Navigator.pushNamed(
-                              context,
-                              '/user-profile',
-                              arguments: user['id'],
-                            );
+                            // Navigate to user profile using GoRouter
+                            context.push(Routes.userProfilePath(user['username']));
                           },
                         );
                       },

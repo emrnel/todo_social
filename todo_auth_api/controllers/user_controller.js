@@ -211,7 +211,11 @@ export const getUserProfile = async (req, res) => {
 
     const user = await User.findOne({
       where: { username: username },
-      attributes: ['id', 'username', 'email', 'bio', 'profilePicture', 'createdAt'],
+      attributes: [
+        'id', 'username', 'email', 'bio', 'profilePicture', 'createdAt',
+        'xp', 'level', 'currentStreak', 'longestStreak', 'todosCompletedCount',
+        'followersCount', 'followingCount'
+      ],
     });
 
     if (!user) {
@@ -277,6 +281,13 @@ export const getUserProfile = async (req, res) => {
           bio: user.bio,
           profilePicture: user.profilePicture,
           createdAt: user.createdAt,
+          xp: user.xp,
+          level: user.level,
+          currentStreak: user.currentStreak,
+          longestStreak: user.longestStreak,
+          todosCompletedCount: user.todosCompletedCount,
+          followersCount: user.followersCount,
+          followingCount: user.followingCount,
         },
         followerCount,
         followingCount,

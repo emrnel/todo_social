@@ -52,7 +52,86 @@ class RoutinesScreen extends ConsumerWidget {
               itemCount: routines.length,
               itemBuilder: (context, index) {
                 final routine = routines[index];
-                return _buildRoutineCard(context, ref, routine);
+                return Dismissible(
+                  key: ValueKey('routine_${routine.id}'),
+                  background: Container(
+                    color: Colors.green,
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.only(left: 20),
+                    child: const Icon(Icons.check, color: Colors.white),
+                  ),
+                  secondaryBackground: Container(
+                    color: Colors.redAccent,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  confirmDismiss: (direction) async {
+                    if (direction == DismissDirection.startToEnd) {
+                      // Complete routine (left swipe)
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Rutin tamamlandı olarak işaretlendi! Yarın tekrar görünecek.'),
+                            backgroundColor: Colors.green,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                      // TODO: Add routine completion API call here when backend supports it
+                      return false; // Don't actually remove from list
+                    } else {
+                      // Delete routine (right swipe)
+                      final shouldDelete = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Rutini Sil'),
+                          content: Text(
+                            '"${routine.title}" rutinini silmek istediğinize emin misiniz?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('İptal'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('Sil', style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (shouldDelete == true) {
+                        try {
+                          await ref
+                              .read(routineProvider.notifier)
+                              .removeRoutine(routine.id);
+                          await ref.read(todoProvider.notifier).fetchMyTodos();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Rutin silindi'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Hata: ${e.toString()}'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      }
+                      return false; // We handle deletion manually
+                    }
+                  },
+                  child: _buildRoutineCard(context, ref, routine),
+                );
               },
             ),
       floatingActionButton: FloatingActionButton(

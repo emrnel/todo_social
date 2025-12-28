@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:todo_social/data/models/user_model.dart';
 import 'package:todo_social/features/todo/data/repositories/todo_repository.dart';
 import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
+import 'package:todo_social/core/navigation/routes.dart';
+import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 
 final todoLikesProvider = FutureProvider.family<List<UserModel>, int>((ref, todoId) async {
   final repository = ref.watch(todoRepositoryProvider);
@@ -18,6 +20,7 @@ class TodoLikesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final likesAsync = ref.watch(todoLikesProvider(todoId));
+    final currentUser = ref.watch(authProvider).currentUser;
 
     return Scaffold(
       appBar: AppBar(
@@ -87,6 +90,8 @@ class TodoLikesScreen extends ConsumerWidget {
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];
+              final isCurrentUser = currentUser != null && user.id == currentUser.id;
+
               return ListTile(
                 leading: CircleAvatar(
                   backgroundImage: user.profilePicture != null &&
@@ -101,9 +106,31 @@ class TodoLikesScreen extends ConsumerWidget {
                         )
                       : null,
                 ),
-                title: Text(
-                  user.username,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                title: Row(
+                  children: [
+                    Text(
+                      user.username,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    if (isCurrentUser) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Sen',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 subtitle: user.bio != null && user.bio!.isNotEmpty
                     ? Text(
@@ -131,7 +158,12 @@ class TodoLikesScreen extends ConsumerWidget {
                   ],
                 ),
                 onTap: () {
-                  context.push('/profile/${user.id}');
+                  // If it's the current user, navigate to their own profile
+                  if (isCurrentUser) {
+                    context.push(Routes.myProfile);
+                  } else {
+                    context.push(Routes.userProfilePath(user.username));
+                  }
                 },
               );
             },

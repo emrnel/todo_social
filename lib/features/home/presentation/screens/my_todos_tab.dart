@@ -5,6 +5,7 @@ import 'package:todo_social/data/models/todo_model.dart';
 import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
 import 'package:todo_social/data/models/routine_model.dart';
 import 'package:todo_social/core/navigation/routes.dart';
+import 'package:todo_social/features/routine/presentation/providers/routine_provider.dart';
 
 class MyTodosTab extends ConsumerStatefulWidget {
   const MyTodosTab({super.key});
@@ -135,21 +136,78 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
     return Dismissible(
       key: ValueKey('routine_${r.id}'),
       background: Container(
-        color: Colors.orange,
+        color: Colors.green,
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 20),
-        child: const Icon(Icons.info, color: Colors.white),
+        child: const Icon(Icons.check, color: Colors.white),
       ),
       secondaryBackground: Container(
-        color: Colors.orange,
+        color: Colors.redAccent,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.info, color: Colors.white),
+        child: const Icon(Icons.delete, color: Colors.white),
       ),
-      confirmDismiss: (_) async {
-        // Navigate to routines screen
-        context.push(Routes.routines);
-        return false;
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          // Complete routine (swipe right)
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Rutin tamamlandı olarak işaretlendi! Yarın tekrar görünecek.'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+          // TODO: Add routine completion API call here when backend supports it
+          return false; // Don't remove from list
+        } else {
+          // Delete routine (swipe left)
+          final shouldDelete = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Rutini Sil'),
+              content: Text(
+                '"${r.title}" rutinini silmek istediğinize emin misiniz?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('İptal'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Sil', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldDelete == true) {
+            try {
+              await ref.read(routineProvider.notifier).removeRoutine(r.id);
+              await ref.read(todoProvider.notifier).fetchMyTodos();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Rutin silindi'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Hata: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          }
+          return false; // We handle deletion manually
+        }
       },
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),
@@ -396,22 +454,38 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
                       : const Icon(Icons.lock, color: Colors.grey, size: 20),
                 ],
               ),
-              // Like count display
-              if (t.likeCount > 0)
+              // Like and comment count display
+              if (t.likeCount > 0 || t.commentCount > 0)
                 Padding(
                   padding: const EdgeInsets.only(top: 8, left: 48),
                   child: Row(
                     children: [
-                      Icon(Icons.favorite,
-                          size: 16, color: Colors.red.shade300),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${t.likeCount} ${t.likeCount == 1 ? "beğeni" : "beğeni"}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
+                      if (t.likeCount > 0) ...[
+                        Icon(Icons.favorite,
+                            size: 16, color: Colors.red.shade300),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${t.likeCount} ${t.likeCount == 1 ? "beğeni" : "beğeni"}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
-                      ),
+                      ],
+                      if (t.likeCount > 0 && t.commentCount > 0)
+                        const SizedBox(width: 12),
+                      if (t.commentCount > 0) ...[
+                        Icon(Icons.comment,
+                            size: 16, color: Colors.blue.shade300),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${t.commentCount} ${t.commentCount == 1 ? "yorum" : "yorum"}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
