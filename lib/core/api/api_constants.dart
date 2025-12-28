@@ -1,9 +1,5 @@
 // lib/core/api/api_constants.dart
 
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
-
 class ApiConstants {
   // Railway Production Backend URL
 
@@ -19,7 +15,10 @@ class ApiConstants {
   /// Dinamik base URL resolver
 
   static String get baseUrl {
-    // Production mode (Release build): Railway backend kullan
+    // Always use Railway backend (production)
+    return _productionUrl;
+
+    /* Uncomment to use local backend in debug mode:
     if (kReleaseMode) {
       return _productionUrl;
     }
@@ -30,12 +29,11 @@ class ApiConstants {
     }
 
     if (Platform.isAndroid) {
-      // Android Emülatör için 10.0.2.2
       return 'http://10.0.2.2:$_apiPort/api';
     }
 
-    // iOS, macOS, Windows, Linux
     return 'http://localhost:$_apiPort/api';
+    */
   }
 
   /// Railway backend'i zorla kullan (test için)
