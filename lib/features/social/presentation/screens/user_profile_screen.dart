@@ -552,16 +552,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   onPressed: () async {
                     try {
                       await ref.read(todoProvider.notifier).toggleLike(todo.id);
+                      // Refresh profile to show updated like status
                       ref.invalidate(userProfileProvider(widget.username!));
                     } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Hata: ${e.toString()}'),
-                            backgroundColor: AppColors.error,
-                          ),
-                        );
-                      }
+                      // Silently handle - toggleLike already handles the API call
+                      // and updates the state optimistically
                     }
                   },
                 ),

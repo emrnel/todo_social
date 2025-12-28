@@ -6,6 +6,8 @@ import 'package:todo_social/features/todo/presentation/providers/todo_provider.d
 import 'package:todo_social/data/models/routine_model.dart';
 import 'package:todo_social/core/navigation/routes.dart';
 import 'package:todo_social/features/routine/presentation/providers/routine_provider.dart';
+import 'package:todo_social/core/theme/app_colors.dart';
+import 'package:todo_social/features/social/presentation/widgets/comment_section.dart';
 
 class MyTodosTab extends ConsumerStatefulWidget {
   const MyTodosTab({super.key});
@@ -150,17 +152,31 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
           // Complete routine (swipe right)
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Rutin tamamlandı olarak işaretlendi! Yarın tekrar görünecek.'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
-            );
+          try {
+            await ref.read(routineProvider.notifier).completeRoutine(r.id);
+            await ref.read(todoProvider.notifier).fetchMyTodos();
+            if (context.mounted) {
+              final recurrenceText = _getRecurrenceText(r.recurrenceType).toLowerCase();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Rutin tamamlandı! $recurrenceText tekrar görünecek.'),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+            return true; // Remove from list
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Hata: ${e.toString()}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return false;
           }
-          // TODO: Add routine completion API call here when backend supports it
-          return false; // Don't remove from list
         } else {
           // Delete routine (swipe left)
           final shouldDelete = await showDialog<bool>(
@@ -454,41 +470,79 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
                       : const Icon(Icons.lock, color: Colors.grey, size: 20),
                 ],
               ),
-              // Like and comment count display
-              if (t.likeCount > 0 || t.commentCount > 0)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, left: 48),
-                  child: Row(
-                    children: [
-                      if (t.likeCount > 0) ...[
-                        Icon(Icons.favorite,
-                            size: 16, color: Colors.red.shade300),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${t.likeCount} ${t.likeCount == 1 ? "beğeni" : "beğeni"}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                      if (t.likeCount > 0 && t.commentCount > 0)
-                        const SizedBox(width: 12),
-                      if (t.commentCount > 0) ...[
-                        Icon(Icons.comment,
-                            size: 16, color: Colors.blue.shade300),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${t.commentCount} ${t.commentCount == 1 ? "yorum" : "yorum"}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ],
+              // Action buttons (like and comment)
+              const Divider(height: 24),
+              Row(
+                children: [
+                  // Like button
+                  IconButton(
+                    icon: Icon(
+                      t.isLiked ? Icons.favorite : Icons.favorite_border,
+                      color: t.isLiked ? AppColors.like : Colors.grey,
+                    ),
+                    onPressed: () async {
+                      try {
+                        await ref.read(todoProvider.notifier).toggleLike(t.id);
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Hata: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
                   ),
-                ),
+                  if (t.likeCount > 0)
+                    InkWell(
+                      onTap: () {
+                        context.push(Routes.todoLikesPath(t.id));
+                      },
+                      child: Text(
+                        '${t.likeCount}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(width: 16),
+                  // Comment button
+                  IconButton(
+                    icon: Icon(Icons.comment_outlined, color: Colors.grey.shade600),
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => CommentSection(todoId: t.id),
+                      );
+                    },
+                  ),
+                  if (t.commentCount > 0)
+                    InkWell(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => CommentSection(todoId: t.id),
+                        );
+                      },
+                      child: Text(
+                        '${t.commentCount}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ],
           ),
         ),

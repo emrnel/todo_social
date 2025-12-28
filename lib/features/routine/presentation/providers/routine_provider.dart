@@ -119,6 +119,17 @@ class RoutineProvider extends StateNotifier<RoutineState> {
       );
     }
   }
+
+  Future<void> completeRoutine(int routineId) async {
+    try {
+      await _repository.completeRoutine(routineId);
+      // Routine completion doesn't change the routine list, just adds a completion record
+      // The routine will still appear in the list for the next period
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+      rethrow;
+    }
+  }
 }
 
 final routineProvider =

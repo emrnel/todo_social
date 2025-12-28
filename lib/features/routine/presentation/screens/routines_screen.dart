@@ -68,18 +68,32 @@ class RoutinesScreen extends ConsumerWidget {
                   ),
                   confirmDismiss: (direction) async {
                     if (direction == DismissDirection.startToEnd) {
-                      // Complete routine (left swipe)
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Rutin tamamlandı olarak işaretlendi! Yarın tekrar görünecek.'),
-                            backgroundColor: Colors.green,
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
+                      // Complete routine (swipe right)
+                      try {
+                        await ref.read(routineProvider.notifier).completeRoutine(routine.id);
+                        await ref.read(todoProvider.notifier).fetchMyTodos();
+                        if (context.mounted) {
+                          final recurrenceText = _getRecurrenceText(routine.recurrenceType).toLowerCase();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Rutin tamamlandı! $recurrenceText tekrar görünecek.'),
+                              backgroundColor: Colors.green,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                        return true; // Remove from list
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Hata: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                        return false;
                       }
-                      // TODO: Add routine completion API call here when backend supports it
-                      return false; // Don't actually remove from list
                     } else {
                       // Delete routine (right swipe)
                       final shouldDelete = await showDialog<bool>(
