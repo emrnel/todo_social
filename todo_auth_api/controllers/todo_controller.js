@@ -1,5 +1,6 @@
 import Todo from '../models/Todo.js';
 import Routine from '../models/Routine.js';
+import RoutineCompletion from '../models/RoutineCompletion.js';
 import TodoLike from '../models/TodoLike.js';
 import User from '../models/User.js';
 import Category from '../models/Category.js';
@@ -8,6 +9,42 @@ import { validationResult } from 'express-validator';
 import { processHashtags, calculateXP, addXP, updateStreak } from '../utils/helpers.js';
 import { createNotification } from './notification.controller.js';
 import { checkAndAwardBadges } from './badge.controller.js';
+import { Op } from 'sequelize';
+
+/**
+ * Helper function to check if routine is completed for current period
+ */
+const checkRoutineCompletedToday = async (routineId, userId, recurrenceType) => {
+  const now = new Date();
+  let startDate;
+
+  if (recurrenceType === 'daily') {
+    // Check if completed today
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (recurrenceType === 'weekly') {
+    // Check if completed this week (week starts on Monday)
+    const dayOfWeek = now.getDay();
+    const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust for Monday start
+    startDate = new Date(now);
+    startDate.setDate(now.getDate() - diff);
+    startDate.setHours(0, 0, 0, 0);
+  } else {
+    // For custom recurrence, check today
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  const completion = await RoutineCompletion.findOne({
+    where: {
+      routineId,
+      userId,
+      completedAt: {
+        [Op.gte]: startDate,
+      },
+    },
+  });
+
+  return !!completion;
+};
 
 /**
  * @name   getMyTodos
@@ -19,7 +56,7 @@ export const getMyTodos = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [todos, routines] = await Promise.all([
+    const [todos, allRoutines] = await Promise.all([
       Todo.findAll({
         where: { userId: userId },
         order: [['createdAt', 'DESC']],
@@ -48,6 +85,19 @@ export const getMyTodos = async (req, res) => {
       }),
     ]);
 
+    // Filter out completed routines (only show incomplete ones)
+    const incompleteRoutines = [];
+    for (const routine of allRoutines) {
+      const isCompletedToday = await checkRoutineCompletedToday(
+        routine.id,
+        userId,
+        routine.recurrenceType
+      );
+      if (!isCompletedToday) {
+        incompleteRoutines.push(routine.toJSON());
+      }
+    }
+
     // Check if user liked each todo
     const todosWithLikes = await Promise.all(
       todos.map(async (todo) => {
@@ -69,7 +119,7 @@ export const getMyTodos = async (req, res) => {
       message: 'Kullanıcının yapılacaklar listesi başarıyla getirildi',
       data: {
         todos: todosWithLikes,
-        routines: routines.map(r => r.toJSON()),
+        routines: incompleteRoutines,
       },
     });
   } catch (error) {

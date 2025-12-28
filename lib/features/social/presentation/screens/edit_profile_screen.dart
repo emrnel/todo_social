@@ -44,9 +44,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 70,
       );
 
       if (image != null) {
