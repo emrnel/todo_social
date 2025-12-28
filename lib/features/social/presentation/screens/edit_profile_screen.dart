@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,22 +23,20 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _bioController;
-  late TextEditingController _profilePictureController;
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
+  String? _selectedImageBase64;
+  File? _selectedImageFile;
 
   @override
   void initState() {
     super.initState();
     _bioController = TextEditingController(text: widget.currentBio);
-    _profilePictureController =
-        TextEditingController(text: widget.currentProfilePicture ?? '');
   }
 
   @override
   void dispose() {
     _bioController.dispose();
-    _profilePictureController.dispose();
     super.dispose();
   }
 
@@ -50,23 +50,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       );
 
       if (image != null) {
-        // NOT: Gerçek bir uygulamada burada resmi bir sunucuya yükleyip URL almalısınız
-        // Şimdilik sadece local path gösteriyoruz
+        final File imageFile = File(image.path);
+        final bytes = await imageFile.readAsBytes();
+        final base64Image = base64Encode(bytes);
+
+        setState(() {
+          _selectedImageFile = imageFile;
+          _selectedImageBase64 = base64Image;
+        });
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                'Fotoğraf seçildi! Gerçek uygulamada bu resmi bir sunucuya yüklemeniz gerekir.',
-              ),
-              duration: Duration(seconds: 3),
+              content: Text('Fotoğraf seçildi!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
             ),
           );
         }
-        // Eğer bir image hosting servisi kullanıyorsanız (imgur, cloudinary vs.)
-        // burada upload işlemi yapıp dönen URL'i textfield'a set edin:
-        // setState(() {
-        //   _profilePictureController.text = uploadedUrl;
-        // });
       }
     } catch (e) {
       if (mounted) {
@@ -89,13 +90,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final dio = ref.read(apiServiceProvider);
       final repository = UserRepository(dio);
 
+      // Send base64 image if selected, otherwise keep current or null
+      String? profilePictureData;
+      if (_selectedImageBase64 != null) {
+        profilePictureData = 'data:image/jpeg;base64,$_selectedImageBase64';
+      }
+
       await repository.updateProfile(
         bio: _bioController.text.trim().isEmpty
             ? null
             : _bioController.text.trim(),
-        profilePicture: _profilePictureController.text.trim().isEmpty
-            ? null
-            : _profilePictureController.text.trim(),
+        profilePicture: profilePictureData,
       );
 
       if (mounted) {
@@ -159,52 +164,61 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             Center(
               child: Column(
                 children: [
-                  _profilePictureController.text.isNotEmpty
+                  // Show selected image or current profile picture or placeholder
+                  _selectedImageFile != null
                       ? CircleAvatar(
-                          radius: 50,
-                          backgroundImage:
-                              NetworkImage(_profilePictureController.text),
+                          radius: 60,
+                          backgroundImage: FileImage(_selectedImageFile!),
                           backgroundColor: Colors.teal,
-                          onBackgroundImageError: (_, __) {},
                         )
-                      : const CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.teal,
-                          child: Icon(Icons.person,
-                              size: 50, color: Colors.white),
-                        ),
+                      : widget.currentProfilePicture != null &&
+                              widget.currentProfilePicture!.isNotEmpty
+                          ? CircleAvatar(
+                              radius: 60,
+                              backgroundImage:
+                                  NetworkImage(widget.currentProfilePicture!),
+                              backgroundColor: Colors.teal,
+                              onBackgroundImageError: (_, __) {},
+                            )
+                          : const CircleAvatar(
+                              radius: 60,
+                              backgroundColor: Colors.teal,
+                              child: Icon(Icons.person,
+                                  size: 60, color: Colors.white),
+                            ),
                   const SizedBox(height: 16),
                   // Gallery pick button
                   ElevatedButton.icon(
                     onPressed: _pickImageFromGallery,
                     icon: const Icon(Icons.photo_library),
-                    label: const Text('Galeriden Seç'),
+                    label: Text(_selectedImageFile != null
+                        ? 'Farklı Fotoğraf Seç'
+                        : 'Galeriden Fotoğraf Seç'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal,
                       foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  if (_selectedImageFile != null) ...[
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _selectedImageFile = null;
+                          _selectedImageBase64 = null;
+                        });
+                      },
+                      icon: const Icon(Icons.close, color: Colors.red),
+                      label: const Text('Seçimi İptal Et',
+                          style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
-
-            // Profile picture URL field
-            TextField(
-              controller: _profilePictureController,
-              decoration: const InputDecoration(
-                labelText: 'Profil Fotoğrafı URL',
-                hintText: 'https://example.com/photo.jpg',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.image),
-              ),
-              keyboardType: TextInputType.url,
-              onChanged: (_) {
-                setState(() {});
-              },
-            ),
-
-            const SizedBox(height: 24),
 
             // Bio field
             TextField(
@@ -219,7 +233,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               maxLength: 500,
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // Info text
             Container(
@@ -237,7 +251,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Galeri seçimi şu anda gösterim içindir. Gerçek uygulamada seçilen resmi bir image hosting servisine (Cloudinary, ImgBB, vb.) yükleyip dönen URL\'i kullanmalısınız.',
+                      'Seçtiğiniz fotoğraf otomatik olarak yüklenecektir. Yüksek çözünürlüklü fotoğraflar yükleme süresini artırabilir.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.blue.shade900,

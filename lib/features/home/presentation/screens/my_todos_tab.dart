@@ -149,6 +149,10 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
         padding: const EdgeInsets.only(right: 20),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
+      onDismissed: (direction) {
+        // This is called after confirmDismiss returns true
+        // No action needed here as we handle everything in confirmDismiss
+      },
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
           // Complete routine (swipe right)

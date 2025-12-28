@@ -1,5 +1,7 @@
 import Routine from '../models/Routine.js';
 import RoutineCompletion from '../models/RoutineCompletion.js';
+import Todo from '../models/Todo.js';
+import User from '../models/User.js';
 import { validationResult } from 'express-validator';
 import { Op } from 'sequelize';
 
@@ -69,22 +71,26 @@ export const getMyRoutines = async (req, res) => {
       order: [['createdAt', 'DESC']],
     });
 
-    // Check completion status for each routine
-    const routinesWithCompletion = await Promise.all(
-      routines.map(async (routine) => {
-        const isCompletedToday = await checkRoutineCompletedToday(routine.id, userId, routine.recurrenceType);
-        return {
+    // Filter out routines that are already completed for the current period
+    const incompleteRoutines = [];
+
+    for (const routine of routines) {
+      const isCompletedToday = await checkRoutineCompletedToday(routine.id, userId, routine.recurrenceType);
+
+      // Only include routines that haven't been completed for this period
+      if (!isCompletedToday) {
+        incompleteRoutines.push({
           ...routine.toJSON(),
-          isCompletedToday,
-        };
-      })
-    );
+          isCompletedToday: false,
+        });
+      }
+    }
 
     return res.status(200).json({
       success: true,
       message: 'Rutinler başarıyla getirildi',
       data: {
-        routines: routinesWithCompletion,
+        routines: incompleteRoutines,
       },
     });
   } catch (error) {
@@ -275,12 +281,74 @@ export const completeRoutine = async (req, res) => {
       });
     }
 
+    const completedAt = new Date();
+
     // Create completion record
     await RoutineCompletion.create({
       routineId: id,
       userId,
-      completedAt: new Date(),
+      completedAt,
     });
+
+    // Create a completed todo for this routine completion
+    // This allows the completion to appear in the user's profile
+    const completedTodo = await Todo.create({
+      userId,
+      title: routine.title,
+      description: routine.description,
+      isCompleted: true,
+      isPublic: routine.isPublic,
+      completedAt,
+      categoryId: null, // Routines don't have categories
+    });
+
+    // Award XP and update user stats
+    const user = await User.findByPk(userId);
+    if (user) {
+      const xpGained = 10; // XP for completing a routine
+      const newXp = user.xp + xpGained;
+      const newLevel = Math.floor(Math.sqrt(newXp / 100)) + 1;
+      const newTodosCompletedCount = user.todosCompletedCount + 1;
+
+      // Update streak
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const lastActivity = user.lastActivityDate ? new Date(user.lastActivityDate) : null;
+
+      let newStreak = user.currentStreak || 0;
+      let newLongestStreak = user.longestStreak || 0;
+
+      if (lastActivity) {
+        lastActivity.setHours(0, 0, 0, 0);
+        const diffDays = Math.floor((today - lastActivity) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) {
+          // Same day, keep streak
+        } else if (diffDays === 1) {
+          // Consecutive day, increment streak
+          newStreak += 1;
+          if (newStreak > newLongestStreak) {
+            newLongestStreak = newStreak;
+          }
+        } else {
+          // Streak broken, reset to 1
+          newStreak = 1;
+        }
+      } else {
+        // First activity
+        newStreak = 1;
+        newLongestStreak = 1;
+      }
+
+      await user.update({
+        xp: newXp,
+        level: newLevel,
+        currentStreak: newStreak,
+        longestStreak: newLongestStreak,
+        lastActivityDate: today,
+        todosCompletedCount: newTodosCompletedCount,
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -290,6 +358,8 @@ export const completeRoutine = async (req, res) => {
           ...routine.toJSON(),
           isCompletedToday: true,
         },
+        xpGained: 10,
+        completedTodo: completedTodo,
       },
     });
   } catch (error) {
