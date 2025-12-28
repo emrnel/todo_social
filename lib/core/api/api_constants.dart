@@ -18,7 +18,10 @@ class ApiConstants {
     // Always use Railway backend (production)
     return _productionUrl;
 
-    /* Uncomment to use local backend in debug mode:
+    /* Use local backend for testing:
+    return 'http://localhost:$_apiPort/api';
+
+    Uncomment to use local backend in debug mode:
     if (kReleaseMode) {
       return _productionUrl;
     }
