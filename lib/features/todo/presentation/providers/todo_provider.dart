@@ -154,22 +154,37 @@ class TodoProvider extends StateNotifier<TodoState> {
   Future<void> toggleLike(int todoId) async {
     final originalTodos = state.todos;
 
-    final currentTodo = state.todos.firstWhere((todo) => todo.id == todoId);
+    // Try to find todo in current state, but don't crash if not found
+    final currentTodo = state.todos.firstWhere(
+      (todo) => todo.id == todoId,
+      orElse: () => TodoModel(
+        id: todoId,
+        userId: 0,
+        title: '',
+        isCompleted: false,
+        isPublic: false,
+        likeCount: 0,
+        isLiked: false,
+        createdAt: DateTime.now(),
+      ),
+    );
     final isCurrentlyLiked = currentTodo.isLiked;
 
-    // Optimistic update
-    final updatedTodos = state.todos.map((todo) {
-      if (todo.id == todoId) {
-        return todo.copyWith(
-          isLiked: !isCurrentlyLiked,
-          likeCount:
-              isCurrentlyLiked ? (todo.likeCount) - 1 : (todo.likeCount) + 1,
-        );
-      }
-      return todo;
-    }).toList();
+    // Optimistic update only if todo exists in state
+    if (state.todos.any((todo) => todo.id == todoId)) {
+      final updatedTodos = state.todos.map((todo) {
+        if (todo.id == todoId) {
+          return todo.copyWith(
+            isLiked: !isCurrentlyLiked,
+            likeCount:
+                isCurrentlyLiked ? (todo.likeCount) - 1 : (todo.likeCount) + 1,
+          );
+        }
+        return todo;
+      }).toList();
 
-    state = state.copyWith(todos: updatedTodos);
+      state = state.copyWith(todos: updatedTodos);
+    }
 
     try {
       if (isCurrentlyLiked) {
@@ -178,11 +193,15 @@ class TodoProvider extends StateNotifier<TodoState> {
         await _repository.likeTodo(todoId);
       }
     } catch (e) {
-      // Revert on error
-      state = state.copyWith(
-        todos: originalTodos,
-        errorMessage: e.toString(),
-      );
+      // Revert on error only if we did an optimistic update
+      if (state.todos.any((todo) => todo.id == todoId)) {
+        state = state.copyWith(
+          todos: originalTodos,
+          errorMessage: e.toString(),
+        );
+      } else {
+        state = state.copyWith(errorMessage: e.toString());
+      }
       rethrow;
     }
   }
