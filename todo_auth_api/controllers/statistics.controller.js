@@ -84,12 +84,12 @@ export const getMyStatistics = async (req, res) => {
       },
     });
 
-    // Get category breakdown
+    // Get category breakdown (ensure numeric count for PostgreSQL)
     const categoryBreakdown = await Todo.findAll({
       where: { userId },
       attributes: [
         'categoryId',
-        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        [sequelize.literal('CAST(COUNT("id") AS INTEGER)'), 'count'],
       ],
       group: ['categoryId'],
       raw: true,
