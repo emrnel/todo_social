@@ -56,7 +56,12 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
     } on DioException catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = e.response?.data['message'] ?? e.message ?? 'Bilinmeyen hata';
+          final responseData = e.response?.data;
+          if (responseData is Map) {
+            _errorMessage = responseData['message'] ?? e.message ?? 'Bilinmeyen hata';
+          } else {
+            _errorMessage = e.message ?? 'Bilinmeyen hata';
+          }
           _isLoading = false;
         });
       }
