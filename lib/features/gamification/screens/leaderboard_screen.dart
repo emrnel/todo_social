@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:todo_social/core/navigation/routes.dart';
 import 'package:todo_social/features/gamification/providers/statistics_provider.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
@@ -202,6 +204,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
             : CircleAvatar(
                 child: Text(user.username[0].toUpperCase()),
               ),
+        onTap: () {
+          context.push(Routes.userProfilePath(user.username));
+        },
       ),
     );
   }

@@ -160,7 +160,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
             )
           : null,
       onTap: () {
-        context.push('${Routes.userProfile}/${user.username}');
+        context.push(Routes.userProfilePath(user.username));
       },
     );
   }
