@@ -1,5 +1,6 @@
 import Hashtag from '../models/Hashtag.js';
 import TodoHashtag from '../models/TodoHashtag.js';
+import Notification from '../models/Notification.js';
 
 /**
  * Extract hashtags from text
@@ -93,6 +94,7 @@ export const calculateLevel = (xp) => {
  */
 export const addXP = async (user, xpAmount) => {
   try {
+    const oldLevel = user.level;
     const newXP = user.xp + xpAmount;
     const newLevel = calculateLevel(newXP);
 
@@ -101,7 +103,16 @@ export const addXP = async (user, xpAmount) => {
       level: newLevel,
     });
 
-    return { xp: newXP, level: newLevel };
+    // Create notification if user leveled up
+    if (newLevel > oldLevel) {
+      await Notification.create({
+        userId: user.id,
+        type: 'level_up',
+        message: `Tebrikler! Seviye ${newLevel}'e ulaştınız!`,
+      });
+    }
+
+    return { xp: newXP, level: newLevel, leveledUp: newLevel > oldLevel };
   } catch (error) {
     console.error('Error adding XP:', error);
     return null;
