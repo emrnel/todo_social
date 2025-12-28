@@ -120,13 +120,13 @@ export const getMyStatistics = async (req, res) => {
       success: true,
       data: {
         user: {
-          xp: user.xp,
-          level: user.level,
-          currentStreak: user.currentStreak,
-          longestStreak: user.longestStreak,
-          todosCompletedCount: user.todosCompletedCount,
-          followersCount: actualFollowersCount,
-          followingCount: actualFollowingCount,
+          xp: parseInt(user.xp) || 0,
+          level: parseInt(user.level) || 1,
+          currentStreak: parseInt(user.currentStreak) || 0,
+          longestStreak: parseInt(user.longestStreak) || 0,
+          todosCompletedCount: parseInt(user.todosCompletedCount) || 0,
+          followersCount: parseInt(actualFollowersCount) || 0,
+          followingCount: parseInt(actualFollowingCount) || 0,
         },
         stats: {
           totalTodos: parseInt(totalTodos) || 0,
@@ -139,7 +139,10 @@ export const getMyStatistics = async (req, res) => {
           monthlyCompletedTodos: parseInt(monthlyCompletedTodos) || 0,
           mostProductiveDay,
         },
-        categoryBreakdown,
+        categoryBreakdown: categoryBreakdown.map(cb => ({
+          categoryId: cb.categoryId ? parseInt(cb.categoryId) : null,
+          count: parseInt(cb.count) || 0,
+        })),
       },
     });
   } catch (error) {
