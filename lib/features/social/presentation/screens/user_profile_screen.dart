@@ -551,12 +551,17 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   ),
                   onPressed: () async {
                     try {
-                      await ref.read(todoProvider.notifier).toggleLike(todo.id);
+                      final repository = ref.read(todoRepositoryProvider);
+                      // Call like or unlike based on current state
+                      if (todo.isLiked) {
+                        await repository.unlikeTodo(todo.id);
+                      } else {
+                        await repository.likeTodo(todo.id);
+                      }
                       // Refresh profile to show updated like status
                       ref.invalidate(userProfileProvider(widget.username!));
                     } catch (e) {
-                      // Silently handle - toggleLike already handles the API call
-                      // and updates the state optimistically
+                      // Silently handle errors
                     }
                   },
                 ),
@@ -1313,20 +1318,32 @@ class _MyProfileScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            // Like count (no interactive buttons on own profile)
-            if (todo.likeCount > 0) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.favorite, color: Colors.red, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${todo.likeCount} beğeni',
-                    style: const TextStyle(fontSize: 12),
+            // Like count and comment section (feed-style, no like button)
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                // Clickable like count to see who liked
+                if (todo.likeCount > 0)
+                  InkWell(
+                    onTap: () {
+                      context.push(Routes.todoLikesPath(todo.id));
+                    },
+                    child: Text(
+                      '${todo.likeCount} beğeni',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ],
-              ),
-            ],
+              ],
+            ),
+            // Inline comment section (just like feed)
+            CommentSection(
+              todoId: todo.id,
+              initialCommentCount: todo.commentCount,
+            ),
           ],
         ),
       ),

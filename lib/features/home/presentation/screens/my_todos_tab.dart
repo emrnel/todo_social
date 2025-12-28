@@ -470,78 +470,31 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
                       : const Icon(Icons.lock, color: Colors.grey, size: 20),
                 ],
               ),
-              // Action buttons (like and comment)
+              // Action buttons (like count only, no like button)
               const Divider(height: 24),
               Row(
                 children: [
-                  // Like button
-                  IconButton(
-                    icon: Icon(
-                      t.isLiked ? Icons.favorite : Icons.favorite_border,
-                      color: t.isLiked ? AppColors.like : Colors.grey,
-                    ),
-                    onPressed: () async {
-                      try {
-                        await ref.read(todoProvider.notifier).toggleLike(t.id);
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Hata: ${e.toString()}'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      }
-                    },
-                  ),
+                  // Like count (clickable to see who liked)
                   if (t.likeCount > 0)
                     InkWell(
                       onTap: () {
                         context.push(Routes.todoLikesPath(t.id));
                       },
                       child: Text(
-                        '${t.likeCount}',
+                        '${t.likeCount} beğeni',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(width: 16),
-                  // Comment button
-                  IconButton(
-                    icon: Icon(Icons.comment_outlined, color: Colors.grey.shade600),
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => CommentSection(todoId: t.id),
-                      );
-                    },
-                  ),
-                  if (t.commentCount > 0)
-                    InkWell(
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (context) => CommentSection(todoId: t.id),
-                        );
-                      },
-                      child: Text(
-                        '${t.commentCount}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                 ],
+              ),
+              // Inline comment section (just like feed)
+              CommentSection(
+                todoId: t.id,
+                initialCommentCount: t.commentCount,
               ),
             ],
           ),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:todo_social/features/gamification/providers/statistics_provider.dart';
+import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
+import 'package:todo_social/core/navigation/routes.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
@@ -109,6 +112,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   }
 
   Widget _buildUserCard(user, int rank) {
+    final currentUser = ref.watch(authProvider).currentUser;
+    final isCurrentUser = currentUser != null && user.id == currentUser.id;
+
     final rankColor = rank == 1
         ? Colors.amber
         : rank == 2
@@ -135,6 +141,13 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     return Card(
       elevation: rank <= 3 ? 4 : 1,
       child: ListTile(
+        onTap: () {
+          if (isCurrentUser) {
+            context.push(Routes.myProfile);
+          } else {
+            context.push(Routes.userProfilePath(user.username));
+          }
+        },
         leading: Stack(
           alignment: Alignment.center,
           children: [
@@ -177,6 +190,25 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
+            // "Sen" badge for current user
+            if (isCurrentUser) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Sen',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(

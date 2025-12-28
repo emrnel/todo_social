@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:todo_social/core/api/api_service.dart';
 import 'package:todo_social/core/navigation/routes.dart';
+import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 
 class FollowersListScreen extends ConsumerStatefulWidget {
   final int userId;
@@ -69,6 +70,8 @@ class _FollowersListScreenState extends ConsumerState<FollowersListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = ref.watch(authProvider).currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -122,6 +125,8 @@ class _FollowersListScreenState extends ConsumerState<FollowersListScreen> {
                       itemCount: users.length,
                       itemBuilder: (context, index) {
                         final user = users[index];
+                        final isCurrentUser = currentUser != null && user['id'] == currentUser.id;
+
                         return ListTile(
                           leading: CircleAvatar(
                             backgroundImage: user['profilePicture'] != null
@@ -131,14 +136,40 @@ class _FollowersListScreenState extends ConsumerState<FollowersListScreen> {
                                 ? Text(user['username'][0].toUpperCase())
                                 : null,
                           ),
-                          title: Text(
-                            user['username'] ?? '',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          title: Row(
+                            children: [
+                              Text(
+                                user['username'] ?? '',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              if (isCurrentUser) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    'Sen',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           subtitle: user['bio'] != null ? Text(user['bio']) : null,
                           onTap: () {
-                            // Navigate to user profile using GoRouter
-                            context.push(Routes.userProfilePath(user['username']));
+                            // If it's the current user, navigate to their own profile
+                            if (isCurrentUser) {
+                              context.push(Routes.myProfile);
+                            } else {
+                              context.push(Routes.userProfilePath(user['username']));
+                            }
                           },
                         );
                       },
