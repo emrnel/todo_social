@@ -16,7 +16,7 @@ class BadgeWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: isEarned ? _getTierColor().withOpacity(0.1) : Colors.grey[200],
         borderRadius: BorderRadius.circular(12),
@@ -27,52 +27,63 @@ class BadgeWidget extends StatelessWidget {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            badge.icon ?? '🏆',
-            style: TextStyle(
-              fontSize: 28,
-              color: isEarned ? null : Colors.grey,
+          Flexible(
+            child: Text(
+              badge.icon ?? '🏆',
+              style: TextStyle(
+                fontSize: 24,
+                color: isEarned ? null : Colors.grey,
+              ),
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            badge.name,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: isEarned ? Colors.black87 : Colors.grey[600],
+          const SizedBox(height: 2),
+          Flexible(
+            child: Text(
+              badge.name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: isEarned ? Colors.black87 : Colors.grey[600],
+              ),
             ),
           ),
           if (showDescription) ...[
-            const SizedBox(height: 4),
-            Text(
-              badge.description,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey[600],
+            const SizedBox(height: 2),
+            Flexible(
+              child: Text(
+                badge.description,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 8,
+                  color: Colors.grey[600],
+                ),
               ),
             ),
           ],
-          if (badge.tier != null) ...[
-            const SizedBox(height: 4),
+          if (badge.tier != null && !showDescription) ...[
+            const SizedBox(height: 2),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               decoration: BoxDecoration(
                 color: _getTierColor(),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 badge.tier!,
                 style: const TextStyle(
-                  fontSize: 9,
+                  fontSize: 7,
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

@@ -3,18 +3,64 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_social/features/gamification/providers/badge_provider.dart';
 import 'package:todo_social/features/gamification/widgets/badge_widget.dart';
 import 'package:todo_social/data/models/badge_model.dart';
+import 'package:todo_social/core/api/api_service.dart';
+import 'package:todo_social/data/repositories/badge_repository.dart';
 
-class BadgesScreen extends ConsumerWidget {
+class BadgesScreen extends ConsumerStatefulWidget {
   const BadgesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BadgesScreen> createState() => _BadgesScreenState();
+}
+
+class _BadgesScreenState extends ConsumerState<BadgesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresh badges when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(myBadgesProvider);
+      ref.invalidate(allBadgesProvider);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final myBadgesAsync = ref.watch(myBadgesProvider);
     final allBadgesAsync = ref.watch(allBadgesProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rozetler'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Rozetleri Kontrol Et',
+            onPressed: () async {
+              try {
+                final dio = ref.read(apiServiceProvider);
+                final repository = BadgeRepository(dio);
+                await repository.checkBadges();
+
+                // Refresh badges
+                ref.invalidate(myBadgesProvider);
+                ref.invalidate(allBadgesProvider);
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Rozet kontrolü tamamlandı!')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Hata: $e')),
+                  );
+                }
+              }
+            },
+          ),
+        ],
       ),
       body: DefaultTabController(
         length: 2,
@@ -52,15 +98,11 @@ class BadgesScreen extends ConsumerWidget {
 
                   // All Badges Tab
                   allBadgesAsync.when(
-                    data: (badges) => RefreshIndicator(
-                      onRefresh: () async {
-                        ref.invalidate(allBadgesProvider);
-                        ref.invalidate(myBadgesProvider);
-                      },
-                      child: myBadgesAsync.when(
+                    data: (allBadges) {
+                      return myBadgesAsync.when(
                         data: (myBadges) {
                           final myBadgeIds = myBadges.map((b) => b.id).toSet();
-                          final badgesWithStatus = badges.map((badge) {
+                          final badgesWithStatus = allBadges.map((badge) {
                             return BadgeModel(
                               id: badge.id,
                               name: badge.name,
@@ -75,40 +117,92 @@ class BadgesScreen extends ConsumerWidget {
                             );
                           }).toList();
 
-                          return SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.all(16),
-                            child: GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: 0.85,
-                              ),
-                              itemCount: badgesWithStatus.length,
-                              itemBuilder: (context, index) {
-                                final badge = badgesWithStatus[index];
-                                return BadgeWidget(
-                                  badge: badge,
-                                  isEarned: badge.earnedAt != null,
-                                  showDescription: true,
-                                );
-                              },
-                            ),
+                          return RefreshIndicator(
+                            onRefresh: () async {
+                              ref.invalidate(allBadgesProvider);
+                              ref.invalidate(myBadgesProvider);
+                            },
+                            child: allBadges.isEmpty
+                                ? Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '🏆',
+                                          style: TextStyle(fontSize: 64, color: Colors.grey[400]),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Henüz rozet yok',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : SingleChildScrollView(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.all(16),
+                                    child: GridView.builder(
+                                      shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        crossAxisSpacing: 12,
+                                        mainAxisSpacing: 12,
+                                        childAspectRatio: 0.85,
+                                      ),
+                                      itemCount: badgesWithStatus.length,
+                                      itemBuilder: (context, index) {
+                                        final badge = badgesWithStatus[index];
+                                        return BadgeWidget(
+                                          badge: badge,
+                                          isEarned: badge.earnedAt != null,
+                                          showDescription: true,
+                                        );
+                                      },
+                                    ),
+                                  ),
                           );
                         },
                         loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (_, __) => SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(16),
-                          child: BadgeGridView(badges: badges, showDescription: true),
-                        ),
+                        error: (_, __) {
+                          // Fallback to showing all badges without earned status
+                          return RefreshIndicator(
+                            onRefresh: () async {
+                              ref.invalidate(allBadgesProvider);
+                              ref.invalidate(myBadgesProvider);
+                            },
+                            child: SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(16),
+                              child: BadgeGridView(badges: allBadges, showDescription: true),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (error, stack) => Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text('Hata: $error'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              ref.invalidate(allBadgesProvider);
+                              ref.invalidate(myBadgesProvider);
+                            },
+                            child: const Text('Tekrar Dene'),
+                          ),
+                        ],
                       ),
                     ),
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (error, stack) => Center(child: Text('Hata: $error')),
                   ),
                 ],
               ),

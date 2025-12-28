@@ -7,11 +7,13 @@ class TodoRepository {
 
   TodoRepository(this._dio);
 
+  /// Get todos and routines - Backend returns both arrays
   Future<Map<String, dynamic>> getMyTodos() async {
     try {
       final response = await _dio.get('/todos/mytodos');
       final data = response.data['data'];
 
+      // Backend returns separate todos and routines arrays
       return {
         'todos': data['todos'] ?? [],
         'routines': data['routines'] ?? [],
@@ -21,6 +23,7 @@ class TodoRepository {
     }
   }
 
+  /// Legacy method name for backward compatibility
   Future<Map<String, dynamic>> getMyTodosAndRoutines() async {
     return getMyTodos();
   }
@@ -65,6 +68,7 @@ class TodoRepository {
     }
   }
 
+  /// Legacy method name for backward compatibility
   Future<TodoModel> updateTodoStatus(int todoId, bool isCompleted) async {
     return updateTodo(todoId, isCompleted: isCompleted);
   }

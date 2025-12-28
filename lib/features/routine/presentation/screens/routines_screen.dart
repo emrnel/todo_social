@@ -94,7 +94,7 @@ class RoutinesScreen extends ConsumerWidget {
                     size: 14, color: Colors.grey.shade600),
                 const SizedBox(width: 4),
                 Text(
-                  'Tekrar: ${_getRecurrenceText(routine.recurrenceType)}',
+                  'Tekrar: ${_getRecurrenceText(routine.recurrenceType, routine.recurrenceValue)}',
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.grey.shade700,
@@ -141,7 +141,7 @@ class RoutinesScreen extends ConsumerWidget {
     );
   }
 
-  String _getRecurrenceText(String recurrenceType) {
+  String _getRecurrenceText(String recurrenceType, String? recurrenceValue) {
     switch (recurrenceType.toLowerCase()) {
       case 'daily':
         return 'Her Gün';
@@ -149,6 +149,22 @@ class RoutinesScreen extends ConsumerWidget {
         return 'Her Hafta';
       case 'monthly':
         return 'Her Ay';
+      case 'custom':
+        if (recurrenceValue != null && recurrenceValue.isNotEmpty) {
+          final days = recurrenceValue.split(',');
+          final dayLabels = {
+            'mon': 'Pzt',
+            'tue': 'Sal',
+            'wed': 'Çar',
+            'thu': 'Per',
+            'fri': 'Cum',
+            'sat': 'Cmt',
+            'sun': 'Paz',
+          };
+          final dayNames = days.map((d) => dayLabels[d.trim()] ?? d).join(', ');
+          return 'Özel: $dayNames';
+        }
+        return 'Özel';
       default:
         return recurrenceType;
     }

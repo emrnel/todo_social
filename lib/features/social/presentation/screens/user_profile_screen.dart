@@ -159,9 +159,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          _buildStatItem('Takipçi', followerCount),
+                          _buildStatItem('Takipçi', followerCount, user.id, 'followers', context),
                           const SizedBox(width: 24),
-                          _buildStatItem('Takip', followingCount),
+                          _buildStatItem('Takip', followingCount, user.id, 'following', context),
                           const Spacer(),
                           Container(
                             decoration: BoxDecoration(
@@ -341,23 +341,26 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 6,
-                                  crossAxisSpacing: 8,
-                                  mainAxisSpacing: 8,
-                                  childAspectRatio: 1,
+                              SizedBox(
+                                height: 120,
+                                child: GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                    childAspectRatio: 1.2,
+                                  ),
+                                  itemCount: displayBadges.length > 6 ? 6 : displayBadges.length,
+                                  itemBuilder: (context, index) {
+                                    return BadgeWidget(
+                                      badge: displayBadges[index],
+                                      isEarned: true,
+                                      showDescription: false,
+                                    );
+                                  },
                                 ),
-                                itemCount: displayBadges.length,
-                                itemBuilder: (context, index) {
-                                  return BadgeWidget(
-                                    badge: displayBadges[index],
-                                    isEarned: true,
-                                    showDescription: false,
-                                  );
-                                },
                               ),
                             ],
                           ),
@@ -570,7 +573,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     },
                     child: Text(
                       '${todo.likeCount} beğeni',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
@@ -579,15 +582,15 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   ),
                 const SizedBox(width: 8),
                 IconButton(
-                  icon: Icon(Icons.copy, color: AppColors.share, size: 20),
+                  icon: const Icon(Icons.copy, color: AppColors.share, size: 20),
                   onPressed: () async {
                     try {
                       await ref.read(todoProvider.notifier).copyTodo(todo.id);
 
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Görev kopyalandı!'),
+                          const SnackBar(
+                            content: Text('Görev kopyalandı!'),
                             backgroundColor: AppColors.success,
                           ),
                         );
@@ -619,25 +622,30 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     );
   }
 
-  Widget _buildStatItem(String label, int count) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$count',
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+  Widget _buildStatItem(String label, int count, int userId, String listType, BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        context.push(Routes.usersListPath(userId, listType));
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$count',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade600,
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -795,9 +803,9 @@ class _MyProfileScreen extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildStatColumn('Takipçi', followerCount),
+                          _buildStatColumn('Takipçi', followerCount, user.id, 'followers', context),
                           const SizedBox(width: 40),
-                          _buildStatColumn('Takip', followingCount),
+                          _buildStatColumn('Takip', followingCount, user.id, 'following', context),
                         ],
                       ),
 
@@ -900,7 +908,7 @@ class _MyProfileScreen extends ConsumerWidget {
                                     value: _calculateXpProgress(user.xp, user.level),
                                     minHeight: 8,
                                     backgroundColor: Colors.grey.shade200,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                    valueColor: const AlwaysStoppedAnimation<Color>(
                                       AppColors.primaryPurple,
                                     ),
                                   ),
@@ -964,23 +972,26 @@ class _MyProfileScreen extends ConsumerWidget {
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 6,
-                                  crossAxisSpacing: 8,
-                                  mainAxisSpacing: 8,
-                                  childAspectRatio: 1,
+                              SizedBox(
+                                height: 120,
+                                child: GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                    childAspectRatio: 1.2,
+                                  ),
+                                  itemCount: displayBadges.length > 6 ? 6 : displayBadges.length,
+                                  itemBuilder: (context, index) {
+                                    return BadgeWidget(
+                                      badge: displayBadges[index],
+                                      isEarned: true,
+                                      showDescription: false,
+                                    );
+                                  },
                                 ),
-                                itemCount: displayBadges.length,
-                                itemBuilder: (context, index) {
-                                  return BadgeWidget(
-                                    badge: displayBadges[index],
-                                    isEarned: true,
-                                    showDescription: false,
-                                  );
-                                },
                               ),
                               const SizedBox(height: 16),
                             ],
@@ -1001,12 +1012,18 @@ class _MyProfileScreen extends ConsumerWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () => context.push(Routes.statistics),
-                          icon: const Icon(Icons.bar_chart),
-                          label: const Text('İstatistikler'),
+                          icon: const Icon(Icons.bar_chart, size: 20),
+                          label: const Text(
+                            'İstatistikler',
+                            style: TextStyle(fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.purple,
                             foregroundColor: Colors.white,
                             minimumSize: const Size(double.infinity, 50),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
                           ),
                         ),
                       ),
@@ -1014,12 +1031,18 @@ class _MyProfileScreen extends ConsumerWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () => context.push(Routes.badges),
-                          icon: const Icon(Icons.emoji_events),
-                          label: const Text('Rozetler'),
+                          icon: const Icon(Icons.emoji_events, size: 20),
+                          label: const Text(
+                            'Rozetler',
+                            style: TextStyle(fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.amber,
                             foregroundColor: Colors.white,
                             minimumSize: const Size(double.infinity, 50),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
                           ),
                         ),
                       ),
@@ -1190,24 +1213,29 @@ class _MyProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatColumn(String label, int count) {
-    return Column(
-      children: [
-        Text(
-          '$count',
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+  Widget _buildStatColumn(String label, int count, int userId, String listType, BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        context.push(Routes.usersListPath(userId, listType));
+      },
+      child: Column(
+        children: [
+          Text(
+            '$count',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade600,
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

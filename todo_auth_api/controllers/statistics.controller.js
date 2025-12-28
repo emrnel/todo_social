@@ -89,13 +89,13 @@ export const getMyStatistics = async (req, res) => {
       where: { userId },
       attributes: [
         'categoryId',
-        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        [sequelize.literal('CAST(COUNT("id") AS INTEGER)'), 'count'],
       ],
       group: ['categoryId'],
       raw: true,
     });
 
-    // Get most productive day of week (SQLite compatible)
+    // Get most productive day of week (PostgreSQL compatible)
     const completedTodosByDay = await Todo.findAll({
       where: {
         userId,
@@ -103,17 +103,17 @@ export const getMyStatistics = async (req, res) => {
         completedAt: { [Op.not]: null },
       },
       attributes: [
-        [sequelize.fn('strftime', '%w', sequelize.col('completedAt')), 'dayOfWeek'],
-        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        [sequelize.literal('CAST(EXTRACT(DOW FROM "completedAt") AS INTEGER)'), 'dayOfWeek'],
+        [sequelize.literal('CAST(COUNT("id") AS INTEGER)'), 'count'],
       ],
-      group: [sequelize.fn('strftime', '%w', sequelize.col('completedAt'))],
-      order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
+      group: [sequelize.literal('CAST(EXTRACT(DOW FROM "completedAt") AS INTEGER)')],
+      order: [[sequelize.literal('CAST(COUNT("id") AS INTEGER)'), 'DESC']],
       limit: 1,
       raw: true,
     });
 
     const mostProductiveDay = completedTodosByDay.length > 0
-      ? getDayName(parseInt(completedTodosByDay[0].dayOfWeek) + 1) // strftime %w returns 0-6, getDayName expects 1-7
+      ? getDayName(completedTodosByDay[0].dayOfWeek === 0 ? 7 : completedTodosByDay[0].dayOfWeek) // PostgreSQL DOW: 0=Sunday, 1=Monday..6=Saturday
       : null;
 
     res.json({
@@ -129,14 +129,14 @@ export const getMyStatistics = async (req, res) => {
           followingCount: actualFollowingCount,
         },
         stats: {
-          totalTodos,
-          publicTodosCount,
-          completedTodos,
-          completionRate: parseFloat(completionRate),
-          likesReceived: likesReceived || 0,
-          commentsReceived: commentsReceived || 0,
-          weeklyCompletedTodos,
-          monthlyCompletedTodos,
+          totalTodos: parseInt(totalTodos) || 0,
+          publicTodosCount: parseInt(publicTodosCount) || 0,
+          completedTodos: parseInt(completedTodos) || 0,
+          completionRate: parseFloat(completionRate) || 0,
+          likesReceived: parseInt(likesReceived) || 0,
+          commentsReceived: parseInt(commentsReceived) || 0,
+          weeklyCompletedTodos: parseInt(weeklyCompletedTodos) || 0,
+          monthlyCompletedTodos: parseInt(monthlyCompletedTodos) || 0,
           mostProductiveDay,
         },
         categoryBreakdown,

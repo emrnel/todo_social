@@ -44,4 +44,12 @@ class BadgeRepository {
       rethrow;
     }
   }
+
+  Future<void> checkBadges() async {
+    try {
+      await _dio.post('/badges/check');
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

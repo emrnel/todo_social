@@ -19,8 +19,18 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
   String _recurrenceType = 'daily';
   bool _isPublic = false;
   bool _isLoading = false;
+  Set<String> _selectedDays = {};
 
   final List<String> _recurrenceOptions = ['daily', 'weekly', 'custom'];
+  final Map<String, String> _dayLabels = {
+    'mon': 'Pazartesi',
+    'tue': 'Salı',
+    'wed': 'Çarşamba',
+    'thu': 'Perşembe',
+    'fri': 'Cuma',
+    'sat': 'Cumartesi',
+    'sun': 'Pazar',
+  };
 
   Future<void> _saveRoutine() async {
     if (_titleController.text.trim().isEmpty) {
@@ -30,7 +40,21 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
       return;
     }
 
+    // Validate custom recurrence
+    if (_recurrenceType == 'custom' && _selectedDays.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen en az bir gün seçin')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
+
+    // Prepare recurrence value for custom type
+    String? recurrenceValue;
+    if (_recurrenceType == 'custom') {
+      recurrenceValue = _selectedDays.toList().join(',');
+    }
 
     try {
       await ref.read(routineProvider.notifier).createRoutine(
@@ -40,6 +64,7 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
                 : _descriptionController.text.trim(),
             isPublic: _isPublic,
             recurrenceType: _recurrenceType,
+            recurrenceValue: recurrenceValue,
           );
 
       // REFRESH TODO PROVIDER (todos ve routines birlikte geliyor)
@@ -94,11 +119,46 @@ class _AddRoutineScreenState extends ConsumerState<AddRoutineScreen> {
               }).toList(),
               onChanged: (newValue) {
                 if (newValue != null) {
-                  setState(() => _recurrenceType = newValue);
+                  setState(() {
+                    _recurrenceType = newValue;
+                    // Clear selected days when changing type
+                    if (newValue != 'custom') {
+                      _selectedDays.clear();
+                    }
+                  });
                 }
               },
             ),
             const SizedBox(height: 12),
+            // Custom day selection
+            if (_recurrenceType == 'custom') ...[
+              const Text(
+                'Günleri Seçin:',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _dayLabels.entries.map((entry) {
+                  final isSelected = _selectedDays.contains(entry.key);
+                  return FilterChip(
+                    label: Text(entry.value),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedDays.add(entry.key);
+                        } else {
+                          _selectedDays.remove(entry.key);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+            ],
             SwitchListTile(
               value: _isPublic,
               onChanged: (v) => setState(() => _isPublic = v),

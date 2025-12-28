@@ -20,6 +20,7 @@ import 'package:todo_social/features/gamification/screens/statistics_screen.dart
 import 'package:todo_social/features/gamification/screens/badges_screen.dart';
 import 'package:todo_social/features/gamification/screens/leaderboard_screen.dart';
 import 'package:todo_social/features/todo/presentation/screens/todo_likes_screen.dart';
+import 'package:todo_social/features/social/presentation/screens/users_list_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -100,6 +101,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final idStr = state.pathParameters['id'];
           final todoId = int.parse(idStr ?? '0');
           return TodoLikesScreen(todoId: todoId);
+        },
+      ),
+      // Social routes
+      GoRoute(
+        path: Routes.usersList,
+        builder: (context, state) {
+          final userIdStr = state.pathParameters['userId'];
+          final userId = int.parse(userIdStr ?? '0');
+          final listType = state.pathParameters['listType'] ?? 'followers';
+          return UsersListScreen(userId: userId, listType: listType);
         },
       ),
     ],

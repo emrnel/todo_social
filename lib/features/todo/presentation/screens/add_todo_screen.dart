@@ -18,6 +18,7 @@ class _AddTodoScreenState extends ConsumerState<AddTodoScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   bool _isPublic = false;
+  bool _isSubmitting = false;
   CategoryModel? _selectedCategory;
 
   @override
@@ -75,7 +76,7 @@ class _AddTodoScreenState extends ConsumerState<AddTodoScreen> {
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.category),
                         ),
-                        value: _selectedCategory,
+                        initialValue: _selectedCategory,
                         hint: const Text('Kategori seçin'),
                         items: categories.map((category) {
                           return DropdownMenuItem<CategoryModel>(
@@ -111,35 +112,50 @@ class _AddTodoScreenState extends ConsumerState<AddTodoScreen> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    // Capture messenger/router before awaits to avoid context-after-await lint
-                    final messenger = ScaffoldMessenger.of(context);
-                    final router = GoRouter.of(context);
-                    await ref.read(todoProvider.notifier).createTodo(
-                          _titleController.text.trim(),
-                          description:
-                              _descriptionController.text.trim().isEmpty
-                                  ? null
-                                  : _descriptionController.text.trim(),
-                          isPublic: _isPublic,
-                          categoryId: _selectedCategory?.id,
-                        );
-                    if (!mounted) return;
-                    final state = ref.read(todoProvider);
-                    if (state.errorMessage != null) {
-                      messenger.showSnackBar(
-                        SnackBar(content: Text('Error: ${state.errorMessage}')),
-                      );
-                    } else {
-                      messenger.showSnackBar(
-                        const SnackBar(content: Text('Todo created')),
-                      );
-                      router.pop();
-                    }
-                  }
-                },
-                child: const Text('Save Todo'),
+                onPressed: _isSubmitting
+                    ? null
+                    : () async {
+                        if (_formKey.currentState!.validate()) {
+                          setState(() => _isSubmitting = true);
+                          // Capture messenger/router before awaits to avoid context-after-await lint
+                          final messenger = ScaffoldMessenger.of(context);
+                          final router = GoRouter.of(context);
+                          try {
+                            await ref.read(todoProvider.notifier).createTodo(
+                                  _titleController.text.trim(),
+                                  description:
+                                      _descriptionController.text.trim().isEmpty
+                                          ? null
+                                          : _descriptionController.text.trim(),
+                                  isPublic: _isPublic,
+                                  categoryId: _selectedCategory?.id,
+                                );
+                            if (!mounted) return;
+                            final state = ref.read(todoProvider);
+                            if (state.errorMessage != null) {
+                              messenger.showSnackBar(
+                                SnackBar(content: Text('Error: ${state.errorMessage}')),
+                              );
+                            } else {
+                              messenger.showSnackBar(
+                                const SnackBar(content: Text('Todo created')),
+                              );
+                              router.pop();
+                            }
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isSubmitting = false);
+                            }
+                          }
+                        }
+                      },
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Save Todo'),
               ),
             ],
           ),

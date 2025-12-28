@@ -30,4 +30,11 @@ class Routes {
 
   // Helper method to build todoLikes path
   static String todoLikesPath(int todoId) => '/todo/$todoId/likes';
+
+  // Social routes
+  static const String usersList = '/users/:userId/:listType';
+
+  // Helper method to build usersList path
+  static String usersListPath(int userId, String listType) =>
+      '/users/$userId/$listType';
 }
