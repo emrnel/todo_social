@@ -5,12 +5,14 @@ class BadgeWidget extends StatelessWidget {
   final BadgeModel badge;
   final bool isEarned;
   final bool showDescription;
+  final bool compact;
 
   const BadgeWidget({
     super.key,
     required this.badge,
     this.isEarned = true,
     this.showDescription = false,
+    this.compact = false,
   });
 
   @override
@@ -25,58 +27,88 @@ class BadgeWidget extends StatelessWidget {
           width: 2,
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            badge.icon ?? '🏆',
-            style: TextStyle(
-              fontSize: 28,
-              color: isEarned ? null : Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            badge.name,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: isEarned ? Colors.black87 : Colors.grey[600],
-            ),
-          ),
-          if (showDescription) ...[
-            const SizedBox(height: 4),
-            Text(
-              badge.description,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-          if (badge.tier != null) ...[
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: _getTierColor(),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                badge.tier!,
-                style: const TextStyle(
-                  fontSize: 9,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Adjust sizes based on compact mode and available space
+          final double iconSize = compact ? 28 : 22;
+          final double nameSize = compact ? 11 : 9;
+          final double descSize = compact ? 9 : 8;
+          final double tierSize = compact ? 8 : 7;
+          final double spacing = compact ? 4 : 2;
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    badge.icon ?? '🏆',
+                    style: TextStyle(
+                      fontSize: iconSize,
+                      color: isEarned ? null : Colors.grey,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ],
+              SizedBox(height: spacing),
+              Flexible(
+                flex: 2,
+                child: Text(
+                  badge.name,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: nameSize,
+                    fontWeight: FontWeight.bold,
+                    color: isEarned ? Colors.black87 : Colors.grey[600],
+                    height: 1.1,
+                  ),
+                ),
+              ),
+              if (showDescription) ...[
+                SizedBox(height: spacing / 2),
+                Flexible(
+                  child: Text(
+                    badge.description,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: descSize,
+                      color: Colors.grey[600],
+                      height: 1.1,
+                    ),
+                  ),
+                ),
+              ],
+              if (badge.tier != null) ...[
+                SizedBox(height: spacing),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: compact ? 6 : 4,
+                    vertical: compact ? 2 : 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getTierColor(),
+                    borderRadius: BorderRadius.circular(compact ? 8 : 6),
+                  ),
+                  child: Text(
+                    badge.tier!,
+                    style: TextStyle(
+                      fontSize: tierSize,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -137,11 +169,11 @@ class BadgeGridView extends StatelessWidget {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.85,
+        childAspectRatio: showDescription ? 0.7 : 0.85,
       ),
       itemCount: badges.length,
       itemBuilder: (context, index) {

@@ -9,6 +9,7 @@ import 'package:todo_social/features/user/data/repositories/user_repository.dart
 import 'package:todo_social/core/navigation/routes.dart';
 import 'package:todo_social/features/feed/presentation/providers/feed_provider.dart';
 import 'package:todo_social/features/social/presentation/screens/edit_profile_screen.dart';
+import 'package:todo_social/features/social/presentation/screens/followers_list_screen.dart';
 import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
 import 'package:todo_social/features/user/data/models/public_todo_model.dart';
 import 'package:todo_social/core/theme/app_colors.dart';
@@ -159,9 +160,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          _buildStatItem('Takipçi', followerCount),
+                          _buildStatItem('Takipçi', followerCount, userId: user.id, username: user.username),
                           const SizedBox(width: 24),
-                          _buildStatItem('Takip', followingCount),
+                          _buildStatItem('Takip', followingCount, userId: user.id, username: user.username),
                           const Spacer(),
                           Container(
                             decoration: BoxDecoration(
@@ -345,10 +346,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 6,
-                                  crossAxisSpacing: 8,
-                                  mainAxisSpacing: 8,
-                                  childAspectRatio: 1,
+                                  crossAxisCount: 4,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
+                                  childAspectRatio: 0.85,
                                 ),
                                 itemCount: displayBadges.length,
                                 itemBuilder: (context, index) {
@@ -356,6 +357,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                                     badge: displayBadges[index],
                                     isEarned: true,
                                     showDescription: false,
+                                    compact: true,
                                   );
                                 },
                               ),
@@ -619,25 +621,39 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     );
   }
 
-  Widget _buildStatItem(String label, int count) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$count',
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+  Widget _buildStatItem(String label, int count, {required int userId, required String username}) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FollowersListScreen(
+              userId: userId,
+              username: username,
+              isFollowers: label == 'Takipçi',
+            ),
           ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade600,
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$count',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-      ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -795,9 +811,9 @@ class _MyProfileScreen extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildStatColumn('Takipçi', followerCount),
+                          _buildStatColumn(context, 'Takipçi', followerCount, userId: user.id, username: user.username),
                           const SizedBox(width: 40),
-                          _buildStatColumn('Takip', followingCount),
+                          _buildStatColumn(context, 'Takip', followingCount, userId: user.id, username: user.username),
                         ],
                       ),
 
@@ -968,10 +984,10 @@ class _MyProfileScreen extends ConsumerWidget {
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 6,
-                                  crossAxisSpacing: 8,
-                                  mainAxisSpacing: 8,
-                                  childAspectRatio: 1,
+                                  crossAxisCount: 4,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
+                                  childAspectRatio: 0.85,
                                 ),
                                 itemCount: displayBadges.length,
                                 itemBuilder: (context, index) {
@@ -979,6 +995,7 @@ class _MyProfileScreen extends ConsumerWidget {
                                     badge: displayBadges[index],
                                     isEarned: true,
                                     showDescription: false,
+                                    compact: true,
                                   );
                                 },
                               ),
@@ -1190,24 +1207,38 @@ class _MyProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatColumn(String label, int count) {
-    return Column(
-      children: [
-        Text(
-          '$count',
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+  Widget _buildStatColumn(BuildContext context, String label, int count, {required int userId, required String username}) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FollowersListScreen(
+              userId: userId,
+              username: username,
+              isFollowers: label == 'Takipçi',
+            ),
           ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade600,
+        );
+      },
+      child: Column(
+        children: [
+          Text(
+            '$count',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-      ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
