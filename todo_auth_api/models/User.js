@@ -29,13 +29,14 @@ const User = sequelize.define('User', {
     allowNull: true,
   },
   profilePicture: {
-    type: DataTypes.STRING(500),
+    type: DataTypes.TEXT,
     allowNull: true,
+    comment: 'Profile picture (can be URL or base64 data URI)',
   },
   bannerPicture: {
-    type: DataTypes.STRING(500),
+    type: DataTypes.TEXT,
     allowNull: true,
-    comment: 'Profile banner/cover photo',
+    comment: 'Profile banner/cover photo (can be URL or base64 data URI)',
   },
   theme: {
     type: DataTypes.STRING(20),

@@ -292,12 +292,14 @@ export const completeRoutine = async (req, res) => {
 
     // Create a completed todo for this routine completion
     // This allows the completion to appear in the user's profile
+    // NOTE: We set isPublic to false so routine completions don't appear in feed
+    // They should only show in user's profile as completed tasks
     const completedTodo = await Todo.create({
       userId,
       title: routine.title,
       description: routine.description,
       isCompleted: true,
-      isPublic: routine.isPublic,
+      isPublic: false, // Always private - routine completions shouldn't appear in feed
       completedAt,
       categoryId: null, // Routines don't have categories
     });
