@@ -552,7 +552,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   ),
                   onPressed: () async {
                     try {
-                      await ref.read(todoProvider.notifier).toggleLike(todo.id);
+                      await ref.read(todoProvider.notifier).toggleLike(
+                        todo.id,
+                        currentLikeStatus: todo.isLiked,
+                      );
                       ref.invalidate(userProfileProvider(widget.username!));
                     } catch (e) {
                       if (context.mounted) {

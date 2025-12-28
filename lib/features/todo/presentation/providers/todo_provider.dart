@@ -151,24 +151,31 @@ class TodoProvider extends StateNotifier<TodoState> {
     }
   }
 
-  Future<void> toggleLike(int todoId) async {
+  Future<void> toggleLike(int todoId, {bool? currentLikeStatus}) async {
     final originalTodos = state.todos;
 
-    // Try to find todo in current state, but don't crash if not found
-    final currentTodo = state.todos.firstWhere(
-      (todo) => todo.id == todoId,
-      orElse: () => TodoModel(
-        id: todoId,
-        userId: 0,
-        title: '',
-        isCompleted: false,
-        isPublic: false,
-        likeCount: 0,
-        isLiked: false,
-        createdAt: DateTime.now(),
-      ),
-    );
-    final isCurrentlyLiked = currentTodo.isLiked;
+    // Determine current like status
+    bool isCurrentlyLiked;
+    if (currentLikeStatus != null) {
+      // Use provided status (for todos not in state)
+      isCurrentlyLiked = currentLikeStatus;
+    } else {
+      // Try to find todo in current state
+      final currentTodo = state.todos.firstWhere(
+        (todo) => todo.id == todoId,
+        orElse: () => TodoModel(
+          id: todoId,
+          userId: 0,
+          title: '',
+          isCompleted: false,
+          isPublic: false,
+          likeCount: 0,
+          isLiked: false,
+          createdAt: DateTime.now(),
+        ),
+      );
+      isCurrentlyLiked = currentTodo.isLiked;
+    }
 
     // Optimistic update only if todo exists in state
     if (state.todos.any((todo) => todo.id == todoId)) {
