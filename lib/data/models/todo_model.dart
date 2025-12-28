@@ -55,6 +55,8 @@ class TodoModel {
   final DateTime? completedAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final bool isRoutineCompletion;
+  final int? routineId;
 
   TodoModel({
     required this.id,
@@ -73,6 +75,8 @@ class TodoModel {
     this.completedAt,
     this.createdAt,
     this.updatedAt,
+    this.isRoutineCompletion = false,
+    this.routineId,
   });
 
   factory TodoModel.fromJson(Map<String, dynamic> json) {
@@ -101,6 +105,8 @@ class TodoModel {
           json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt:
           json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      isRoutineCompletion: json['isRoutineCompletion'] == true || json['isRoutineCompletion'] == 1,
+      routineId: json['routineId'],
     );
   }
 
@@ -121,6 +127,8 @@ class TodoModel {
     DateTime? completedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isRoutineCompletion,
+    int? routineId,
   }) {
     return TodoModel(
       id: id ?? this.id,
@@ -139,6 +147,8 @@ class TodoModel {
       completedAt: completedAt ?? this.completedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isRoutineCompletion: isRoutineCompletion ?? this.isRoutineCompletion,
+      routineId: routineId ?? this.routineId,
     );
   }
 

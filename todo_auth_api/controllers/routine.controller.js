@@ -291,17 +291,17 @@ export const completeRoutine = async (req, res) => {
     });
 
     // Create a completed todo for this routine completion
-    // This allows the completion to appear in the user's profile
-    // NOTE: We set isPublic to false so routine completions don't appear in feed
-    // They should only show in user's profile as completed tasks
+    // This todo will be visible in feed and profile with a special badge showing it's a routine
     const completedTodo = await Todo.create({
       userId,
       title: routine.title,
       description: routine.description,
       isCompleted: true,
-      isPublic: false, // Always private - routine completions shouldn't appear in feed
+      isPublic: routine.isPublic, // Respect original routine privacy setting
       completedAt,
       categoryId: null, // Routines don't have categories
+      isRoutineCompletion: true, // Mark this as a routine completion
+      routineId: id, // Link to the original routine
     });
 
     // Award XP and update user stats

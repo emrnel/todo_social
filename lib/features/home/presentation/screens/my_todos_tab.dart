@@ -354,6 +354,34 @@ class _MyTodosTabState extends ConsumerState<MyTodosTab> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Routine completion badge
+                        if (t.isRoutineCompletion)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade100,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.green.shade300, width: 1),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.repeat, size: 12, color: Colors.green.shade700),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    'Rutin Tamamlandı',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.green.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         // Category badge
                         if (t.category != null)
                           Padding(

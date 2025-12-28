@@ -14,6 +14,8 @@ class FeedItemModel {
   final String? recurrenceValue; // For routines
   final CategoryModel? category;
   final List<String> hashtags;
+  final bool isRoutineCompletion; // True if this todo represents a routine completion
+  final int? routineId; // Reference to the routine if this is a routine completion
 
   FeedItemModel({
     required this.id,
@@ -31,6 +33,8 @@ class FeedItemModel {
     this.recurrenceValue,
     this.category,
     this.hashtags = const [],
+    this.isRoutineCompletion = false,
+    this.routineId,
   });
 
   factory FeedItemModel.fromJson(Map<String, dynamic> json) {
@@ -56,6 +60,8 @@ class FeedItemModel {
       hashtags: json['hashtags'] != null
           ? (json['hashtags'] as List).map((h) => h['tag'] as String).toList()
           : [],
+      isRoutineCompletion: json['isRoutineCompletion'] == true || json['isRoutineCompletion'] == 1,
+      routineId: json['routineId'],
     );
   }
 
@@ -75,6 +81,8 @@ class FeedItemModel {
     String? recurrenceValue,
     CategoryModel? category,
     List<String>? hashtags,
+    bool? isRoutineCompletion,
+    int? routineId,
   }) {
     return FeedItemModel(
       id: id ?? this.id,
@@ -92,6 +100,8 @@ class FeedItemModel {
       recurrenceValue: recurrenceValue ?? this.recurrenceValue,
       category: category ?? this.category,
       hashtags: hashtags ?? this.hashtags,
+      isRoutineCompletion: isRoutineCompletion ?? this.isRoutineCompletion,
+      routineId: routineId ?? this.routineId,
     );
   }
 }
