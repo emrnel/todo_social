@@ -19,31 +19,23 @@ class ApiConstants {
   /// Dinamik base URL resolver
 
   static String get baseUrl {
-    /*
     // Production mode (Release build): Railway backend kullan
-
     if (kReleaseMode) {
       return _productionUrl;
     }
 
     // Development/Debug mode: Lokal backend kullan
-
     if (kIsWeb) {
       return 'http://localhost:$_apiPort/api';
     }
 
     if (Platform.isAndroid) {
       // Android Emülatör için 10.0.2.2
-
       return 'http://10.0.2.2:$_apiPort/api';
     }
 
     // iOS, macOS, Windows, Linux
-
     return 'http://localhost:$_apiPort/api';
-    */
-    // Şimdilik hep production URL döndürüyoruz:
-    return _productionUrl;
   }
 
   /// Railway backend'i zorla kullan (test için)
