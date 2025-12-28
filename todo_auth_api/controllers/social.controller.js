@@ -203,14 +203,14 @@ export const getFollowing = async (req, res) => {
   try {
     const userId = req.user.id;
     const currentUser = await User.findByPk(userId);
-    
+
     if (!currentUser) {
       return res.status(404).json({
         success: false,
         message: 'Kullanıcı bulunamadı',
       });
     }
-    
+
     const followingUsers = await currentUser.getFollowing({
       attributes: ['id', 'username', 'email'],
     });
@@ -222,9 +222,117 @@ export const getFollowing = async (req, res) => {
     });
   } catch (error) {
     console.error('Get Following Error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Sunucu hatası: ' + error.message 
+    res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message
+    });
+  }
+};
+
+/**
+ * @name   getFollowers
+ * @desc   Get list of users that are following current user
+ * @route  GET /api/social/followers
+ * @access Private
+ */
+export const getFollowers = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const currentUser = await User.findByPk(userId);
+
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Kullanıcı bulunamadı',
+      });
+    }
+
+    const followerUsers = await currentUser.getFollowers({
+      attributes: ['id', 'username', 'email', 'bio', 'profilePicture'],
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Takipçiler getirildi.',
+      data: { followers: followerUsers.map(u => u.toJSON()) },
+    });
+  } catch (error) {
+    console.error('Get Followers Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message
+    });
+  }
+};
+
+/**
+ * @name   getUserFollowers
+ * @desc   Get list of followers for a specific user by userId
+ * @route  GET /api/social/users/:userId/followers
+ * @access Private
+ */
+export const getUserFollowers = async (req, res) => {
+  try {
+    const targetUserId = parseInt(req.params.userId, 10);
+    const targetUser = await User.findByPk(targetUserId);
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Kullanıcı bulunamadı',
+      });
+    }
+
+    const followerUsers = await targetUser.getFollowers({
+      attributes: ['id', 'username', 'email', 'bio', 'profilePicture'],
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Takipçiler getirildi.',
+      data: { followers: followerUsers.map(u => u.toJSON()) },
+    });
+  } catch (error) {
+    console.error('Get User Followers Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message
+    });
+  }
+};
+
+/**
+ * @name   getUserFollowing
+ * @desc   Get list of users that a specific user is following by userId
+ * @route  GET /api/social/users/:userId/following
+ * @access Private
+ */
+export const getUserFollowing = async (req, res) => {
+  try {
+    const targetUserId = parseInt(req.params.userId, 10);
+    const targetUser = await User.findByPk(targetUserId);
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Kullanıcı bulunamadı',
+      });
+    }
+
+    const followingUsers = await targetUser.getFollowing({
+      attributes: ['id', 'username', 'email', 'bio', 'profilePicture'],
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Takip edilen kullanıcılar getirildi.',
+      data: { following: followingUsers.map(u => u.toJSON()) },
+    });
+  } catch (error) {
+    console.error('Get User Following Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message
     });
   }
 };
