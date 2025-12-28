@@ -41,14 +41,22 @@ class UserStats {
 
   factory UserStats.fromJson(Map<String, dynamic> json) {
     return UserStats(
-      xp: json['xp'] ?? 0,
-      level: json['level'] ?? 1,
-      currentStreak: json['currentStreak'] ?? 0,
-      longestStreak: json['longestStreak'] ?? 0,
-      todosCompletedCount: json['todosCompletedCount'] ?? 0,
-      followersCount: json['followersCount'] ?? 0,
-      followingCount: json['followingCount'] ?? 0,
+      xp: _toInt(json['xp']) ?? 0,
+      level: _toInt(json['level']) ?? 1,
+      currentStreak: _toInt(json['currentStreak']) ?? 0,
+      longestStreak: _toInt(json['longestStreak']) ?? 0,
+      todosCompletedCount: _toInt(json['todosCompletedCount']) ?? 0,
+      followersCount: _toInt(json['followersCount']) ?? 0,
+      followingCount: _toInt(json['followingCount']) ?? 0,
     );
+  }
+
+  static int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    if (value is double) return value.toInt();
+    return null;
   }
 
   int getXpForCurrentLevel() {
@@ -95,16 +103,32 @@ class Stats {
 
   factory Stats.fromJson(Map<String, dynamic> json) {
     return Stats(
-      totalTodos: json['totalTodos'] ?? 0,
-      publicTodosCount: json['publicTodosCount'] ?? 0,
-      completedTodos: json['completedTodos'] ?? 0,
-      completionRate: (json['completionRate'] ?? 0).toDouble(),
-      likesReceived: json['likesReceived'] ?? 0,
-      commentsReceived: json['commentsReceived'] ?? 0,
-      weeklyCompletedTodos: json['weeklyCompletedTodos'] ?? 0,
-      monthlyCompletedTodos: json['monthlyCompletedTodos'] ?? 0,
+      totalTodos: _toInt(json['totalTodos']) ?? 0,
+      publicTodosCount: _toInt(json['publicTodosCount']) ?? 0,
+      completedTodos: _toInt(json['completedTodos']) ?? 0,
+      completionRate: _toDouble(json['completionRate']) ?? 0.0,
+      likesReceived: _toInt(json['likesReceived']) ?? 0,
+      commentsReceived: _toInt(json['commentsReceived']) ?? 0,
+      weeklyCompletedTodos: _toInt(json['weeklyCompletedTodos']) ?? 0,
+      monthlyCompletedTodos: _toInt(json['monthlyCompletedTodos']) ?? 0,
       mostProductiveDay: json['mostProductiveDay'],
     );
+  }
+
+  static int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    if (value is double) return value.toInt();
+    return null;
+  }
+
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 }
 
@@ -119,9 +143,17 @@ class CategoryBreakdown {
 
   factory CategoryBreakdown.fromJson(Map<String, dynamic> json) {
     return CategoryBreakdown(
-      categoryId: json['categoryId'],
-      count: json['count'] ?? 0,
+      categoryId: _toInt(json['categoryId']),
+      count: _toInt(json['count']) ?? 0,
     );
+  }
+
+  static int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    if (value is double) return value.toInt();
+    return null;
   }
 }
 
