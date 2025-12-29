@@ -365,7 +365,7 @@ class _FeedTabState extends ConsumerState<FeedTab> {
                                 },
                                 child: Text(
                                   '${item.likeCount} beğeni',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.primary,
@@ -375,7 +375,7 @@ class _FeedTabState extends ConsumerState<FeedTab> {
                             const SizedBox(width: 8),
                             // Copy button
                             IconButton(
-                              icon: Icon(Icons.copy, color: AppColors.share),
+                              icon: const Icon(Icons.copy, color: AppColors.share),
                               onPressed: () async {
                                 try {
                                   await ref
@@ -384,10 +384,10 @@ class _FeedTabState extends ConsumerState<FeedTab> {
 
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text('Görev kopyalandı!'),
+                                      const SnackBar(
+                                        content: Text('Görev kopyalandı!'),
                                         backgroundColor: AppColors.success,
-                                        duration: const Duration(seconds: 2),
+                                        duration: Duration(seconds: 2),
                                       ),
                                     );
                                   }
