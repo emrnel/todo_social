@@ -2,6 +2,7 @@ class FeedItemModel {
   final int id;
   final int userId;
   final String username;
+  final String? profilePicture;
   final String title;
   final String? description;
   final bool? isCompleted;
@@ -14,11 +15,14 @@ class FeedItemModel {
   final String? recurrenceValue; // For routines
   final CategoryModel? category;
   final List<String> hashtags;
+  final bool isRoutineCompletion;
+  final int? routineId;
 
   FeedItemModel({
     required this.id,
     required this.userId,
     required this.username,
+    this.profilePicture,
     required this.title,
     this.description,
     this.isCompleted,
@@ -31,6 +35,8 @@ class FeedItemModel {
     this.recurrenceValue,
     this.category,
     this.hashtags = const [],
+    this.isRoutineCompletion = false,
+    this.routineId,
   });
 
   factory FeedItemModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +46,7 @@ class FeedItemModel {
           ? json['userId']
           : int.parse(json['userId'].toString()),
       username: json['username'] ?? '',
+      profilePicture: json['profilePicture'],
       title: json['title'] ?? '',
       description: json['description'],
       isCompleted: json['isCompleted'] == true || json['isCompleted'] == 1,
@@ -56,6 +63,8 @@ class FeedItemModel {
       hashtags: json['hashtags'] != null
           ? (json['hashtags'] as List).map((h) => h['tag'] as String).toList()
           : [],
+      isRoutineCompletion: json['isRoutineCompletion'] == true || json['isRoutineCompletion'] == 1,
+      routineId: json['routineId'],
     );
   }
 
@@ -63,6 +72,7 @@ class FeedItemModel {
     int? id,
     int? userId,
     String? username,
+    String? profilePicture,
     String? title,
     String? description,
     bool? isCompleted,
@@ -75,11 +85,14 @@ class FeedItemModel {
     String? recurrenceValue,
     CategoryModel? category,
     List<String>? hashtags,
+    bool? isRoutineCompletion,
+    int? routineId,
   }) {
     return FeedItemModel(
       id: id ?? this.id,
       userId: userId ?? this.userId,
       username: username ?? this.username,
+      profilePicture: profilePicture ?? this.profilePicture,
       title: title ?? this.title,
       description: description ?? this.description,
       isCompleted: isCompleted ?? this.isCompleted,
@@ -92,6 +105,8 @@ class FeedItemModel {
       recurrenceValue: recurrenceValue ?? this.recurrenceValue,
       category: category ?? this.category,
       hashtags: hashtags ?? this.hashtags,
+      isRoutineCompletion: isRoutineCompletion ?? this.isRoutineCompletion,
+      routineId: routineId ?? this.routineId,
     );
   }
 }

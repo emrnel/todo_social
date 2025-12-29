@@ -8,6 +8,7 @@ import 'package:todo_social/features/social/presentation/providers/social_provid
 import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
 import 'package:todo_social/core/theme/app_colors.dart';
 import 'package:todo_social/features/social/presentation/widgets/comment_section.dart';
+import 'package:todo_social/core/widgets/profile_avatar.dart';
 
 enum FeedFilter { following, discover }
 
@@ -149,17 +150,11 @@ class _FeedTabState extends ConsumerState<FeedTab> {
                                 : AppColors.successGradient,
                             shape: BoxShape.circle,
                           ),
-                          child: CircleAvatar(
-                            backgroundColor: Colors.transparent,
+                          padding: const EdgeInsets.all(2),
+                          child: ProfileAvatar(
+                            profilePicture: item.profilePicture,
+                            username: item.username,
                             radius: 20,
-                            child: Text(
-                              item.username[0].toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -190,6 +185,40 @@ class _FeedTabState extends ConsumerState<FeedTab> {
                                       color: Colors.grey.shade600,
                                     ),
                                   ),
+                                  if (item.isRoutineCompletion)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 4),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.purple.shade100,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: Colors.purple.shade300,
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.auto_awesome,
+                                              size: 12,
+                                              color: Colors.purple.shade700,
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              'Rutin Tamamlama',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.purple.shade700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
                               Text(

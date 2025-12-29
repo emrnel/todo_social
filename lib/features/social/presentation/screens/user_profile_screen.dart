@@ -15,6 +15,7 @@ import 'package:todo_social/core/theme/app_colors.dart';
 import 'package:todo_social/features/social/presentation/widgets/comment_section.dart';
 import 'package:todo_social/features/gamification/providers/badge_provider.dart';
 import 'package:todo_social/features/gamification/widgets/badge_widget.dart';
+import 'package:todo_social/core/widgets/profile_avatar.dart';
 
 final userProfileProvider =
     FutureProvider.family<dynamic, String>((ref, username) async {
@@ -102,27 +103,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     children: [
                       Row(
                         children: [
-                          user.profilePicture != null &&
-                                  user.profilePicture!.isNotEmpty
-                              ? CircleAvatar(
-                                  radius: 40,
-                                  backgroundImage:
-                                      NetworkImage(user.profilePicture!),
-                                  backgroundColor: Colors.teal,
-                                  onBackgroundImageError: (_, __) {},
-                                )
-                              : CircleAvatar(
-                                  radius: 40,
-                                  backgroundColor: Colors.teal,
-                                  child: Text(
-                                    user.username[0].toUpperCase(),
-                                    style: const TextStyle(
-                                      fontSize: 32,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
+                          ProfileAvatar(
+                            profilePicture: user.profilePicture,
+                            username: user.username,
+                            radius: 40,
+                          ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: Column(
@@ -744,27 +729,11 @@ class _MyProfileScreen extends ConsumerWidget {
                   width: double.infinity,
                   child: Column(
                     children: [
-                      user.profilePicture != null &&
-                              user.profilePicture!.isNotEmpty
-                          ? CircleAvatar(
-                              radius: 50,
-                              backgroundImage:
-                                  NetworkImage(user.profilePicture!),
-                              backgroundColor: Colors.teal,
-                              onBackgroundImageError: (_, __) {},
-                            )
-                          : CircleAvatar(
-                              radius: 50,
-                              backgroundColor: Colors.teal,
-                              child: Text(
-                                user.username[0].toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 40,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
+                      ProfileAvatar(
+                        profilePicture: user.profilePicture,
+                        username: user.username,
+                        radius: 50,
+                      ),
 
                       const SizedBox(height: 16),
                       Text(

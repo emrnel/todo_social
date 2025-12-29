@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:todo_social/core/api/api_service.dart';
 import 'package:todo_social/features/user/data/repositories/user_repository.dart';
+import 'package:todo_social/core/widgets/profile_avatar.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   final String currentBio;
@@ -44,29 +46,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
       );
 
       if (image != null) {
-        // NOT: Gerçek bir uygulamada burada resmi bir sunucuya yükleyip URL almalısınız
-        // Şimdilik sadece local path gösteriyoruz
+        final bytes = await image.readAsBytes();
+        final base64Image = base64Encode(bytes);
+        final mimeType = image.mimeType ?? 'image/jpeg';
+        final dataUri = 'data:$mimeType;base64,$base64Image';
+
+        setState(() {
+          _profilePictureController.text = dataUri;
+        });
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                'Fotoğraf seçildi! Gerçek uygulamada bu resmi bir sunucuya yüklemeniz gerekir.',
-              ),
-              duration: Duration(seconds: 3),
+              content: Text('Fotoğraf yüklendi!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
             ),
           );
         }
-        // Eğer bir image hosting servisi kullanıyorsanız (imgur, cloudinary vs.)
-        // burada upload işlemi yapıp dönen URL'i textfield'a set edin:
-        // setState(() {
-        //   _profilePictureController.text = uploadedUrl;
-        // });
       }
     } catch (e) {
       if (mounted) {
@@ -159,20 +162,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             Center(
               child: Column(
                 children: [
-                  _profilePictureController.text.isNotEmpty
-                      ? CircleAvatar(
-                          radius: 50,
-                          backgroundImage:
-                              NetworkImage(_profilePictureController.text),
-                          backgroundColor: Colors.teal,
-                          onBackgroundImageError: (_, __) {},
-                        )
-                      : const CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.teal,
-                          child: Icon(Icons.person,
-                              size: 50, color: Colors.white),
-                        ),
+                  ProfileAvatar(
+                    profilePicture: _profilePictureController.text.isEmpty
+                        ? null
+                        : _profilePictureController.text,
+                    username: 'User',
+                    radius: 50,
+                  ),
                   const SizedBox(height: 16),
                   // Gallery pick button
                   ElevatedButton.icon(
@@ -193,12 +189,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             TextField(
               controller: _profilePictureController,
               decoration: const InputDecoration(
-                labelText: 'Profil Fotoğrafı URL',
-                hintText: 'https://example.com/photo.jpg',
+                labelText: 'Profil Fotoğrafı',
+                hintText: 'URL veya galeriden seçin',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.image),
               ),
               keyboardType: TextInputType.url,
+              maxLines: 3,
               onChanged: (_) {
                 setState(() {});
               },
@@ -237,7 +234,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Galeri seçimi şu anda gösterim içindir. Gerçek uygulamada seçilen resmi bir image hosting servisine (Cloudinary, ImgBB, vb.) yükleyip dönen URL\'i kullanmalısınız.',
+                      'Galeriden seçilen resimler otomatik olarak base64 formatında kodlanır ve veritabanında saklanır. İsterseniz bir URL de girebilirsiniz.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.blue.shade900,

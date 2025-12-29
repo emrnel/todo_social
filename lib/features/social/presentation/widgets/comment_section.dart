@@ -5,6 +5,7 @@ import 'package:todo_social/core/theme/app_colors.dart';
 import 'package:todo_social/features/social/data/models/comment_model.dart';
 import 'package:todo_social/features/social/data/repositories/comment_repository.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:todo_social/core/widgets/profile_avatar.dart';
 
 class CommentSection extends ConsumerStatefulWidget {
   final int todoId;
@@ -166,7 +167,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
                   commentCount > 0
                       ? '$commentCount yorum'
                       : 'Yorum yap',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
@@ -195,15 +196,15 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(color: AppColors.border),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(color: AppColors.border),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(color: AppColors.primary, width: 2),
+                        borderSide: const BorderSide(color: AppColors.primary, width: 2),
                       ),
                     ),
                     maxLines: null,
@@ -239,8 +240,8 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
               child: Center(child: CircularProgressIndicator()),
             )
           else if (_comments.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+            const Padding(
+              padding: EdgeInsets.all(16.0),
               child: Center(
                 child: Text(
                   'Henüz yorum yok. İlk yorumu siz yapın!',
@@ -274,22 +275,10 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Profile picture
-          CircleAvatar(
+          ProfileAvatar(
+            profilePicture: comment.profilePicture,
+            username: comment.username,
             radius: 18,
-            backgroundColor: AppColors.primary,
-            backgroundImage: comment.profilePicture != null
-                ? NetworkImage(comment.profilePicture!)
-                : null,
-            child: comment.profilePicture == null
-                ? Text(
-                    comment.username[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  )
-                : null,
           ),
           const SizedBox(width: 12),
 
@@ -310,7 +299,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
                     const SizedBox(width: 8),
                     Text(
                       timeago.format(comment.createdAt, locale: 'tr'),
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
                       ),
@@ -328,7 +317,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
           // Delete button (only for own comments)
           PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert, color: AppColors.textSecondary, size: 18),
+            icon: const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 18),
             itemBuilder: (context) => [
               const PopupMenuItem(
                 value: 'delete',
