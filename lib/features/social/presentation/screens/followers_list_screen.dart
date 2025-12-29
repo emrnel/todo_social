@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:todo_social/core/api/api_service.dart';
 import 'package:todo_social/core/navigation/routes.dart';
 import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
+import 'package:todo_social/core/widgets/profile_avatar.dart';
 
 class FollowersListScreen extends ConsumerStatefulWidget {
   final int userId;
@@ -128,13 +129,10 @@ class _FollowersListScreenState extends ConsumerState<FollowersListScreen> {
                         final isCurrentUser = currentUser != null && user['id'] == currentUser.id;
 
                         return ListTile(
-                          leading: CircleAvatar(
-                            backgroundImage: user['profilePicture'] != null
-                                ? NetworkImage(user['profilePicture'])
-                                : null,
-                            child: user['profilePicture'] == null
-                                ? Text(user['username'][0].toUpperCase())
-                                : null,
+                          leading: ProfileAvatar(
+                            profilePicture: user['profilePicture'],
+                            username: user['username'] ?? '',
+                            radius: 20,
                           ),
                           title: Row(
                             children: [

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_social/core/navigation/routes.dart';
 import 'package:todo_social/features/social/presentation/providers/social_provider.dart';
 import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
+import 'package:todo_social/core/widgets/profile_avatar.dart';
 
 // Standalone version with AppBar (for navigation from routes)
 class SearchScreen extends ConsumerStatefulWidget {
@@ -108,15 +109,10 @@ class _SearchScreenContentState extends ConsumerState<SearchScreenContent> {
                 itemBuilder: (context, index) {
                   final user = results[index];
                   return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.teal,
-                      child: Text(
-                        user.username[0].toUpperCase(),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                    leading: ProfileAvatar(
+                      profilePicture: user.profilePicture,
+                      username: user.username,
+                      radius: 20,
                     ),
                     title: Text('@${user.username}'),
                     subtitle: Text(user.email ?? 'Email yok'),

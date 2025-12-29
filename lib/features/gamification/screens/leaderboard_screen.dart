@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:todo_social/features/gamification/providers/statistics_provider.dart';
 import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 import 'package:todo_social/core/navigation/routes.dart';
+import 'package:todo_social/core/widgets/profile_avatar.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
@@ -227,13 +228,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           ],
         ),
         subtitle: Text(getValue()),
-        trailing: user.profilePicture != null
-            ? CircleAvatar(
-                backgroundImage: NetworkImage(user.profilePicture!),
-              )
-            : CircleAvatar(
-                child: Text(user.username[0].toUpperCase()),
-              ),
+        trailing: ProfileAvatar(
+          profilePicture: user.profilePicture,
+          username: user.username,
+          radius: 20,
+        ),
       ),
     );
   }

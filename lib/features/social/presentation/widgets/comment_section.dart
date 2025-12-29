@@ -5,6 +5,7 @@ import 'package:todo_social/core/theme/app_colors.dart';
 import 'package:todo_social/features/social/data/models/comment_model.dart';
 import 'package:todo_social/features/social/data/repositories/comment_repository.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:todo_social/core/widgets/profile_avatar.dart';
 
 class CommentSection extends ConsumerStatefulWidget {
   final int todoId;
@@ -274,22 +275,10 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Profile picture
-          CircleAvatar(
+          ProfileAvatar(
+            profilePicture: comment.profilePicture,
+            username: comment.username,
             radius: 18,
-            backgroundColor: AppColors.primary,
-            backgroundImage: comment.profilePicture != null
-                ? NetworkImage(comment.profilePicture!)
-                : null,
-            child: comment.profilePicture == null
-                ? Text(
-                    comment.username[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  )
-                : null,
           ),
           const SizedBox(width: 12),
 
