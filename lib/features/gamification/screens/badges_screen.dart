@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_social/features/gamification/providers/badge_provider.dart';
 import 'package:todo_social/features/gamification/widgets/badge_widget.dart';
 import 'package:todo_social/data/models/badge_model.dart';
-import 'package:todo_social/core/api/api_service.dart';
-import 'package:todo_social/data/repositories/badge_repository.dart';
 
 class BadgesScreen extends ConsumerStatefulWidget {
   const BadgesScreen({super.key});
@@ -32,35 +30,6 @@ class _BadgesScreenState extends ConsumerState<BadgesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rozetler'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Rozetleri Kontrol Et',
-            onPressed: () async {
-              try {
-                final dio = ref.read(apiServiceProvider);
-                final repository = BadgeRepository(dio);
-                await repository.checkBadges();
-
-                // Refresh badges
-                ref.invalidate(myBadgesProvider);
-                ref.invalidate(allBadgesProvider);
-
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Rozet kontrolü tamamlandı!')),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Hata: $e')),
-                  );
-                }
-              }
-            },
-          ),
-        ],
       ),
       body: DefaultTabController(
         length: 2,
