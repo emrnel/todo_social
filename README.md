@@ -10,31 +10,87 @@ Kullanıcıların kişisel görevlerini (to-do) ve günlük/haftalık rutinlerin
 
 Projenin minimum geçerli ürün (MVP) kapsamındaki hedefleri:
 
-  - 🔐 **Kullanıcı Doğrulaması:** E-posta/şifre ile kayıt, JWT (JSON Web Token) tabanlı güvenli giriş.
-  - ✅ **Görev Yönetimi (CRUD):** Kullanıcıların kişisel görevlerini oluşturması, listelemesi, güncellemesi ve silmesi.
-  - 🔄 **Rutin Yönetimi:** Günlük veya haftalık tekrarlanan rutinler oluşturabilme.
-  - 🔒 **Görev Gizliliği:** Görevleri "Özel" (Private) veya "Herkese Açık" (Public) olarak ayarlayabilme.
-  - 👥 **Sosyal Özellikler:** Diğer kullanıcıları kullanıcı adına göre arama, takip etme ve takibi bırakma.
-  - 📱 **Sosyal Akış (Feed):** Ana sayfada, sadece takip edilen kişilerin "Herkese Açık" olarak paylaştığı görevleri kronolojik olarak görme.
-  - 👤 **Profil Yönetimi:** Kullanıcıların kendi profil bilgilerini ve başkalarının profillerini (ve herkese açık görevlerini) görüntüleyebilmesi.
+### Kimlik Doğrulama ve Güvenlik
+  - 🔐 **Kullanıcı Doğrulaması:** E-posta/şifre ile kayıt, JWT (JSON Web Token) tabanlı güvenli giriş
+  - 🔒 **Şifre Güvenliği:** Minimum 6 karakter, en az 1 harf ve 1 rakam içeren şifre validasyonu
+  - ✅ **Duplicate Kontrolü:** Email ve kullanıcı adı benzersizlik kontrolü
+
+### Görev ve Rutin Yönetimi
+  - ✅ **Görev Yönetimi (CRUD):** Kullanıcıların kişisel görevlerini oluşturması, listelemesi, güncellemesi ve silmesi
+  - 🔄 **Rutin Yönetimi:** Günlük, haftalık veya özel periyotlarda tekrarlanan rutinler oluşturabilme
+  - 📋 **Rutin Tamamlama:** Rutin tamamlandığında otomatik todo oluşturma ve feed'e ekleme
+  - 📊 **Kategori Sistemi:** Görevleri kategorilere ayırabilme ve kategoriye göre filtreleme
+  - 🏷️ **Hashtag Sistemi:** Görevlere hashtag ekleyebilme ve hashtag'lere göre arama
+  - 🔒 **Görev Gizliliği:** Görevleri "Özel" (Private) veya "Herkese Açık" (Public) olarak ayarlayabilme
+  - 📝 **Görev Kopyalama:** Beğenilen görevleri kopyalayabilme (duplicate kontrolü ile)
+
+### Sosyal Özellikler
+  - 👥 **Kullanıcı Arama:** Diğer kullanıcıları kullanıcı adına göre arama
+  - 🤝 **Takip Sistemi:** Kullanıcıları takip etme/takibi bırakma, takipçi/takip edilen listeleri
+  - 📱 **Sosyal Akış (Feed):** Takip edilen kişilerin ve keşfet sekmesindeki tüm kullanıcıların herkese açık görevlerini görme
+  - 💬 **Yorum Sistemi:** Görevlere yorum yapabilme ve yorumları görüntüleme
+  - ❤️ **Beğeni Sistemi:** Görevleri beğenebilme ve beğeni sayısını görme
+  - 📸 **Profil Fotoğrafları:** Base64 formatında profil ve banner fotoğrafı yükleme
+  - 👤 **Profil Yönetimi:** Kullanıcıların kendi profil bilgilerini düzenlemesi ve başkalarının profillerini görüntülemesi
+
+### Oyunlaştırma (Gamification)
+  - 🏆 **XP Sistemi:** Görev tamamlama, rutin tamamlama, sosyal etkileşimler için XP kazanma
+  - 📈 **Seviye Sistemi:** XP biriktirerek seviye atlama
+  - 🎯 **Rozet Sistemi:** Çeşitli başarılar için rozet kazanma
+  - 📊 **İstatistikler:** Haftalık aktivite, kategori dağılımı, tamamlama oranları
+  - 🏅 **Liderlik Tablosu:** Kullanıcılar arası XP sıralaması
+  - 🔥 **Streak Sistemi:** Ardışık günlerde aktivite takibi
+
+### Bildirimler
+  - 🔔 **Gerçek Zamanlı Bildirimler:** Takip, beğeni, yorum, görev/rutin kopyalama bildirimleri
+  - 📬 **Bildirim Merkezi:** Tüm bildirimleri görüntüleme ve yönetme
 
 ## 🛠️ Teknoloji Yığını
 
 | Kategori | Teknoloji | Açıklama |
 | :--- | :--- | :--- |
-| **Frontend** | Flutter 3.x | Cross-platform mobil uygulama çatısı. |
-| **State Management** | Flutter Riverpod | Modern, derleme zamanı güvenli state management. |
-| **Navigasyon** | GoRouter | Flutter için bildirimsel (declarative) yönlendirme. |
-| **Backend** | Node.js (Express.js) | Hızlı ve esnek sunucu tarafı API geliştirme. |
-| **Veritabanı** | MySQL | İlişkisel veritabanı yönetimi. |
-| **Güvenlik** | JWT, bcrypt.js | Güvenli kullanıcı oturumları ve şifre hash'leme. |
+| **Frontend** | Flutter 3.x | Cross-platform mobil uygulama çatısı |
+| **State Management** | Flutter Riverpod | Modern, derleme zamanı güvenli state management |
+| **Navigasyon** | GoRouter | Flutter için bildirimsel (declarative) yönlendirme |
+| **HTTP Client** | Dio | Güçlü HTTP client ve interceptor desteği |
+| **Backend** | Node.js (Express.js) | Hızlı ve esnek sunucu tarafı API geliştirme |
+| **Veritabanı** | PostgreSQL | İlişkisel veritabanı yönetimi (Railway'de host) |
+| **ORM** | Sequelize | Node.js için promise-based ORM |
+| **Güvenlik** | JWT, bcrypt.js | Güvenli kullanıcı oturumları ve şifre hash'leme |
+| **Image Processing** | Base64 Encoding | Profil fotoğrafları için client-side encoding |
+| **Deployment** | Railway | Backend deployment ve PostgreSQL hosting |
 
 ## 📁 Proje Yapısı (Monorepo)
 
 Bu proje, hem frontend hem de backend kodunu aynı repoda barındıran bir "Monorepo" yapısındadır:
 
-  - `/` (Root): Flutter projesinin ana dizini (`lib` klasörünü içerir).
-  - `/todo-auth-api`: Node.js (Express) backend projesinin dizini.
+  - `/` (Root): Flutter projesinin ana dizini (`lib` klasörünü içerir)
+  - `/todo_auth_api`: Node.js (Express) backend projesinin dizini
+    - `/controllers`: İş mantığı ve API endpoint handler'ları
+    - `/models`: Sequelize ORM modelleri (User, Todo, Routine, vb.)
+    - `/routes`: Express route tanımlamaları
+    - `/migrations`: Veritabanı migration dosyaları
+    - `/utils`: Yardımcı fonksiyonlar (XP hesaplama, hashtag işleme, vb.)
+
+### Frontend Klasör Yapısı
+```
+lib/
+├── core/                    # Çekirdek fonksiyonalite
+│   ├── api/                # API servisleri ve HTTP client
+│   ├── navigation/         # GoRouter yapılandırması
+│   ├── theme/              # Tema ve renk tanımlamaları
+│   └── widgets/            # Ortak kullanılan widget'lar (ProfileAvatar, vb.)
+├── data/                   # Veri modelleri
+│   └── models/            # Tüm data model'leri (User, Todo, Routine, vb.)
+└── features/              # Özellik tabanlı modüller
+    ├── auth/              # Kimlik doğrulama
+    ├── todo/              # Görev yönetimi
+    ├── routine/           # Rutin yönetimi
+    ├── feed/              # Sosyal akış
+    ├── social/            # Sosyal özellikler (profil, takip, arama)
+    ├── gamification/      # Oyunlaştırma (XP, rozetler, liderlik)
+    └── home/              # Ana sayfa ve tab navigasyonu
+```
 
 ## 📦 Kurulum ve Çalıştırma
 
