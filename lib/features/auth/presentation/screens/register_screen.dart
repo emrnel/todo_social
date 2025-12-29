@@ -193,6 +193,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             if (value == null || value.isEmpty) {
                               return "Şifre boş olamaz";
                             }
+                            if (value.length < 6) {
+                              return "Şifre en az 6 karakter olmalıdır";
+                            }
+                            if (!RegExp(r'[a-zA-Z]').hasMatch(value)) {
+                              return "Şifre en az bir harf içermelidir";
+                            }
+                            if (!RegExp(r'[0-9]').hasMatch(value)) {
+                              return "Şifre en az bir rakam içermelidir";
+                            }
                             return null;
                           },
                         ),
