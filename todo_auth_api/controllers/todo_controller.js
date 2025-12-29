@@ -471,6 +471,23 @@ export const copyTodo = async (req, res) => {
     // Determine the original author (if this is already a copy, use its original author)
     const originalAuthorId = originalTodo.originalAuthorId || originalTodo.userId;
 
+    // Check if user has already copied this todo
+    const existingCopy = await Todo.findOne({
+      where: {
+        userId,
+        originalAuthorId,
+        title: originalTodo.title,
+      },
+    });
+
+    if (existingCopy) {
+      return res.status(409).json({
+        success: false,
+        message: 'Bu görevi zaten kopyaladınız',
+        error: { code: 'ALREADY_COPIED' },
+      });
+    }
+
     // Create copy
     const copiedTodo = await Todo.create({
       userId,
