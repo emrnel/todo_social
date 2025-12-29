@@ -29,17 +29,29 @@ export const register = async (req, res) => {
       });
     }
 
-    const { username, email, password } = req.body; 
+    const { username, email, password } = req.body;
 
     // 2. Check if email is already in use (The Sequelize Way)
-    const existingUser = await User.findOne({ where: { email: email } });
-    
-    if (existingUser) {
+    const existingEmail = await User.findOne({ where: { email: email } });
+
+    if (existingEmail) {
       // 409 Conflict
       return res.status(409).json({
         success: false,
         message: "Bu email adresi zaten kayıtlı",
         error: { code: "EMAIL_ALREADY_EXISTS" }
+      });
+    }
+
+    // 2.5. Check if username is already in use
+    const existingUsername = await User.findOne({ where: { username: username } });
+
+    if (existingUsername) {
+      // 409 Conflict
+      return res.status(409).json({
+        success: false,
+        message: "Bu kullanıcı adı zaten kullanılıyor",
+        error: { code: "USERNAME_ALREADY_EXISTS" }
       });
     }
 
@@ -79,6 +91,25 @@ export const register = async (req, res) => {
 
   } catch (error) {
     console.error("Register Error:", error);
+
+    // Handle Sequelize unique constraint errors
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      const field = error.errors[0]?.path;
+      if (field === 'email') {
+        return res.status(409).json({
+          success: false,
+          message: "Bu email adresi zaten kayıtlı",
+          error: { code: "EMAIL_ALREADY_EXISTS" }
+        });
+      } else if (field === 'username') {
+        return res.status(409).json({
+          success: false,
+          message: "Bu kullanıcı adı zaten kullanılıyor",
+          error: { code: "USERNAME_ALREADY_EXISTS" }
+        });
+      }
+    }
+
     return res.status(500).json({
       success: false,
       message: "Sunucu hatası: " + error.message,
