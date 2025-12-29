@@ -5,6 +5,7 @@ import {
   updateRoutine,
   deleteRoutine,
   completeRoutine,
+  copyRoutine,
 } from '../controllers/routine.controller.js';
 import authMiddleware from '../controllers/auth.middleware.js';
 
@@ -47,5 +48,12 @@ router.delete('/:id', deleteRoutine);
  * @access  Private
  */
 router.post('/:id/complete', completeRoutine);
+
+/**
+ * @route   POST /api/routines/:id/copy
+ * @desc    Copy a routine
+ * @access  Private
+ */
+router.post('/:id/copy', copyRoutine);
 
 export default router;
