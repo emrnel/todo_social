@@ -111,7 +111,7 @@ export const getFeed = async (req, res) => {
         include: {
           model: User,
           as: 'author',
-          attributes: ['id', 'username'],
+          attributes: ['id', 'username', 'profilePicture'],
         },
         order: [['createdAt', 'DESC']],
         limit: 50,
@@ -123,7 +123,7 @@ export const getFeed = async (req, res) => {
         include: {
           model: User,
           as: 'author',
-          attributes: ['id', 'username'],
+          attributes: ['id', 'username', 'profilePicture'],
         },
         order: [['createdAt', 'DESC']],
         limit: 50,
@@ -146,6 +146,7 @@ export const getFeed = async (req, res) => {
           id: todo.id,
           userId: todo.userId,
           username: todo.author.username,
+          profilePicture: todo.author.profilePicture,
           title: todo.title,
           description: todo.description,
           isCompleted: todo.isCompleted,
@@ -155,6 +156,8 @@ export const getFeed = async (req, res) => {
           isLiked: !!isLiked,
           createdAt: todo.createdAt,
           type: 'todo',
+          isRoutineCompletion: todo.isRoutineCompletion || false,
+          routineId: todo.routineId,
         };
       })
     );
@@ -166,6 +169,7 @@ export const getFeed = async (req, res) => {
         id: routine.id,
         userId: routine.userId,
         username: routine.author.username,
+        profilePicture: routine.author.profilePicture,
         title: routine.title,
         description: routine.description,
         isCompleted: null,

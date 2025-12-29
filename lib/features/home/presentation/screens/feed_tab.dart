@@ -8,6 +8,7 @@ import 'package:todo_social/features/social/presentation/providers/social_provid
 import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
 import 'package:todo_social/core/theme/app_colors.dart';
 import 'package:todo_social/features/social/presentation/widgets/comment_section.dart';
+import 'package:todo_social/core/widgets/profile_avatar.dart';
 
 enum FeedFilter { following, discover }
 
@@ -142,25 +143,10 @@ class _FeedTabState extends ConsumerState<FeedTab> {
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: isTodo
-                                ? AppColors.primaryGradient
-                                : AppColors.successGradient,
-                            shape: BoxShape.circle,
-                          ),
-                          child: CircleAvatar(
-                            backgroundColor: Colors.transparent,
-                            radius: 20,
-                            child: Text(
-                              item.username[0].toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
+                        ProfileAvatar(
+                          profilePicture: item.profilePicture,
+                          username: item.username,
+                          radius: 20,
                         ),
                         const SizedBox(width: 12),
                         Expanded(

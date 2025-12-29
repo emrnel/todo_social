@@ -2,6 +2,7 @@ class FeedItemModel {
   final int id;
   final int userId;
   final String username;
+  final String? profilePicture;
   final String title;
   final String? description;
   final bool? isCompleted;
@@ -21,6 +22,7 @@ class FeedItemModel {
     required this.id,
     required this.userId,
     required this.username,
+    this.profilePicture,
     required this.title,
     this.description,
     this.isCompleted,
@@ -44,6 +46,7 @@ class FeedItemModel {
           ? json['userId']
           : int.parse(json['userId'].toString()),
       username: json['username'] ?? '',
+      profilePicture: json['profilePicture'],
       title: json['title'] ?? '',
       description: json['description'],
       isCompleted: json['isCompleted'] == true || json['isCompleted'] == 1,
@@ -69,6 +72,7 @@ class FeedItemModel {
     int? id,
     int? userId,
     String? username,
+    String? profilePicture,
     String? title,
     String? description,
     bool? isCompleted,
@@ -88,6 +92,7 @@ class FeedItemModel {
       id: id ?? this.id,
       userId: userId ?? this.userId,
       username: username ?? this.username,
+      profilePicture: profilePicture ?? this.profilePicture,
       title: title ?? this.title,
       description: description ?? this.description,
       isCompleted: isCompleted ?? this.isCompleted,
