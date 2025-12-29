@@ -5,10 +5,10 @@
   "description": "",
   "main": "db.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node run_migrations.js && node index.js",
     "dev": "nodemon index.js",
     "test": "mocha --timeout 5000 --exit todo_api.test.js",
-        "db:migrate": "npx sequelize-cli db:migrate --sequelizerc-path .sequelizerc.cjs",
+    "db:migrate": "npx sequelize-cli db:migrate --sequelizerc-path .sequelizerc.cjs",
     "seed": "node seed.js"
   },
   "keywords": [],

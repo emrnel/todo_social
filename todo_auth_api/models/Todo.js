@@ -65,6 +65,20 @@ const Todo = sequelize.define('Todo', {
     defaultValue: 0,
     comment: 'Number of times this todo has been copied',
   },
+  isRoutineCompletion: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    comment: 'True if this todo was created from routine completion',
+  },
+  routineId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'routines',
+      key: 'id',
+    },
+    comment: 'Reference to source routine',
+  },
 }, {
   tableName: 'todos',
   timestamps: true,
