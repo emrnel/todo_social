@@ -4,6 +4,7 @@ import Todo from '../models/Todo.js';
 import User from '../models/User.js';
 import { validationResult } from 'express-validator';
 import { Op } from 'sequelize';
+import { createNotification } from './notification.controller.js';
 
 /**
  * @name   createRoutine
@@ -75,7 +76,12 @@ export const getMyRoutines = async (req, res) => {
     const incompleteRoutines = [];
 
     for (const routine of routines) {
-      const isCompletedToday = await checkRoutineCompletedToday(routine.id, userId, routine.recurrenceType);
+      const isCompletedToday = await checkRoutineCompletedToday(
+        routine.id,
+        userId,
+        routine.recurrenceType,
+        routine.recurrenceValue
+      );
 
       // Only include routines that haven't been completed for this period
       if (!isCompletedToday) {
@@ -106,7 +112,7 @@ export const getMyRoutines = async (req, res) => {
 /**
  * Helper function to check if routine is completed for current period
  */
-const checkRoutineCompletedToday = async (routineId, userId, recurrenceType) => {
+const checkRoutineCompletedToday = async (routineId, userId, recurrenceType, recurrenceValue) => {
   const now = new Date();
   let startDate;
 
@@ -120,8 +126,28 @@ const checkRoutineCompletedToday = async (routineId, userId, recurrenceType) => 
     startDate = new Date(now);
     startDate.setDate(now.getDate() - diff);
     startDate.setHours(0, 0, 0, 0);
+  } else if (recurrenceType === 'custom' && recurrenceValue) {
+    // For custom recurrence, parse the recurrenceValue (number of days)
+    try {
+      const days = typeof recurrenceValue === 'string'
+        ? parseInt(recurrenceValue, 10)
+        : recurrenceValue;
+
+      if (!isNaN(days) && days > 0) {
+        // Check if completed within the last 'days' days
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - days);
+        startDate.setHours(0, 0, 0, 0);
+      } else {
+        // Invalid custom value, default to daily check
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      }
+    } catch (e) {
+      // Error parsing custom value, default to daily check
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
   } else {
-    // For custom recurrence, check today
+    // For any other case, check today
     startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
 
