@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:todo_social/core/api/api_service.dart';
 import 'package:todo_social/data/models/user_model.dart';
 import 'package:todo_social/core/navigation/routes.dart';
+import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 
 class UsersListScreen extends ConsumerStatefulWidget {
   final int userId;
@@ -136,6 +137,8 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   }
 
   Widget _buildUserTile(UserModel user) {
+    final currentUser = ref.watch(authProvider).currentUser;
+
     return ListTile(
       leading: CircleAvatar(
         backgroundImage: user.profilePicture != null
@@ -160,7 +163,12 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
             )
           : null,
       onTap: () {
-        context.push(Routes.userProfilePath(user.username));
+        // If clicking on yourself, navigate to My Profile instead
+        if (currentUser != null && user.id == currentUser.id) {
+          context.push(Routes.myProfile);
+        } else {
+          context.push(Routes.userProfilePath(user.username));
+        }
       },
     );
   }
