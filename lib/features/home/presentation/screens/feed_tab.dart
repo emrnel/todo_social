@@ -6,6 +6,7 @@ import 'package:todo_social/features/feed/presentation/providers/feed_provider.d
 import 'package:todo_social/features/auth/presentation/providers/auth_provider.dart';
 import 'package:todo_social/features/social/presentation/providers/social_provider.dart';
 import 'package:todo_social/features/todo/presentation/providers/todo_provider.dart';
+import 'package:todo_social/features/routine/presentation/providers/routine_provider.dart';
 import 'package:todo_social/core/theme/app_colors.dart';
 import 'package:todo_social/features/social/presentation/widgets/comment_section.dart';
 import 'package:todo_social/core/widgets/profile_avatar.dart';
@@ -430,6 +431,50 @@ class _FeedTabState extends ConsumerState<FeedTab> {
                           initialCommentCount: item.commentCount ?? 0,
                         ),
                       ],
+
+                      // Action buttons for routines
+                      if (!isTodo) ...[
+                        const Divider(height: 24),
+                        Row(
+                          children: [
+                            // Copy button for routines
+                            IconButton(
+                              icon: Icon(Icons.copy, color: AppColors.share),
+                              onPressed: () async {
+                                try {
+                                  await ref
+                                      .read(routineProvider.notifier)
+                                      .copyRoutine(item.id);
+
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text('Rutin kopyalandı!'),
+                                        backgroundColor: AppColors.success,
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Hata: ${e.toString()}'),
+                                        backgroundColor: AppColors.error,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                            const Text(
+                              'Kopyala',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ],
+
                       const SizedBox(height: 12),
                     ],
                   ),

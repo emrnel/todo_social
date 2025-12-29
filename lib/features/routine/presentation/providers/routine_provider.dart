@@ -130,6 +130,18 @@ class RoutineProvider extends StateNotifier<RoutineState> {
       rethrow;
     }
   }
+
+  Future<void> copyRoutine(int routineId) async {
+    try {
+      final copiedRoutine = await _repository.copyRoutine(routineId);
+      state = state.copyWith(
+        routines: [...state.routines, copiedRoutine],
+      );
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+      rethrow;
+    }
+  }
 }
 
 final routineProvider =

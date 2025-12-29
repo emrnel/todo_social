@@ -373,3 +373,103 @@ export const completeRoutine = async (req, res) => {
     });
   }
 };
+
+/**
+ * @name   copyRoutine
+ * @desc   Copy a public routine to current user's list
+ * @route  POST /api/routines/:id/copy
+ * @access Private
+ */
+export const copyRoutine = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const originalRoutine = await Routine.findByPk(id, {
+      include: [
+        {
+          model: User,
+          as: 'author',
+          attributes: ['id', 'username'],
+        },
+      ],
+    });
+
+    if (!originalRoutine) {
+      return res.status(404).json({
+        success: false,
+        message: 'Rutin bulunamadı',
+        error: { code: 'ROUTINE_NOT_FOUND' },
+      });
+    }
+
+    if (!originalRoutine.isPublic) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bu rutin herkese açık değil',
+        error: { code: 'NOT_PUBLIC' },
+      });
+    }
+
+    if (originalRoutine.userId === userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Kendi rutininizi kopyalayamazsınız',
+        error: { code: 'CANNOT_COPY_OWN' },
+      });
+    }
+
+    // Check if user has already copied this routine
+    const existingCopy = await Routine.findOne({
+      where: {
+        userId,
+        title: originalRoutine.title,
+        recurrenceType: originalRoutine.recurrenceType,
+        recurrenceValue: originalRoutine.recurrenceValue,
+      },
+    });
+
+    if (existingCopy) {
+      return res.status(409).json({
+        success: false,
+        message: 'Bu rutini zaten kopyaladınız',
+        error: { code: 'ALREADY_COPIED' },
+      });
+    }
+
+    // Create copy
+    const copiedRoutine = await Routine.create({
+      userId,
+      title: originalRoutine.title,
+      description: originalRoutine.description,
+      isPublic: false, // Copied routines are private by default
+      recurrenceType: originalRoutine.recurrenceType,
+      recurrenceValue: originalRoutine.recurrenceValue,
+      categoryId: originalRoutine.categoryId,
+    });
+
+    // Create notification for original author
+    await createNotification({
+      userId: originalRoutine.userId,
+      actorId: userId,
+      type: 'routine_copied',
+      routineId: id,
+      message: 'rutininizi kopyaladı',
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Rutin kopyalandı',
+      data: {
+        routine: copiedRoutine,
+      },
+    });
+  } catch (error) {
+    console.error('Copy Routine Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası: ' + error.message,
+      error: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+  }
+};

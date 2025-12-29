@@ -79,4 +79,22 @@ class RoutineRepository {
       throw Exception('Rutin tamamlama hatası: ${e.message}');
     }
   }
+
+  Future<RoutineModel> copyRoutine(int routineId) async {
+    try {
+      final response = await _dio.post('/routines/$routineId/copy');
+      return RoutineModel.fromJson(response.data['data']['routine']);
+    } on DioException catch (e) {
+      // Check if it's already copied error (409 Conflict)
+      if (e.response?.statusCode == 409) {
+        final message = e.response?.data['message'] ?? 'Bu rutini zaten kopyaladınız';
+        throw Exception(message);
+      }
+      // Check for other error messages from backend
+      if (e.response?.data != null && e.response!.data['message'] != null) {
+        throw Exception(e.response!.data['message']);
+      }
+      throw Exception('Kopyalama hatası: ${e.message}');
+    }
+  }
 }
